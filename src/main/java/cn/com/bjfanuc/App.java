@@ -35,6 +35,7 @@ import java.util.concurrent.*;
  */
 
 public class App {
+    public static  String  PATH = App.class.getProtectionDomain().getCodeSource().getLocation().getPath();
 
     public static class DoStore implements Runnable{
 
@@ -99,12 +100,13 @@ public class App {
     public static Element taos;
     public static Element redis;
     public static List<String> taosHosts = new ArrayList<>();
-    public static  String  PATH ;
     static {
-        System.out.println(App.class.getClassLoader().getResourceAsStream(""));  //待完善
+        int i = PATH.lastIndexOf("/");
+        PATH = PATH.substring(0,i+1) ;
+        System.out.println("current PATH: "  + PATH);
         SAXReader reader = new SAXReader();
         try {
-            Document document = reader.read(new File("settings.xml"));
+            Document document = reader.read(new File(PATH + "settings.xml"));
           Element  xmlRoot = document.getRootElement();
          emq = xmlRoot.element("emq");
          taos = xmlRoot.element("taos-db");
@@ -132,6 +134,7 @@ public class App {
             System.exit(1);
             }
 */
+
         try {
 
          mqttReciever = new MQTTReciever(blockingQueue);
