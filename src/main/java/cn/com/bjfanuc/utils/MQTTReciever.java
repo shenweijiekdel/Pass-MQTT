@@ -7,6 +7,7 @@ import org.dom4j.Element;
 import org.fusesource.mqtt.client.*;
 import org.fusesource.mqtt.codec.MQTTFrame;
 
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,7 +50,7 @@ public class MQTTReciever {
         try {
             port = App.emq != null?Integer.parseInt(App.emq.elementText("port")):null;
         }catch (NumberFormatException e){
-            System.out.println("EMQ:port invalid，use default");
+            System.out.println("EMQ: port invalid，use default");
         }
         try {
             if (host == null){
@@ -105,7 +106,7 @@ public class MQTTReciever {
         String data = new String(message.getPayloadBuffer().toByteArray(), encode);
         JSONObject jsonObject = JSONObject.parseObject(data);
         Count.incMqttRecieveDataNum();
-        if (blockingQueue.size() == App.BUFFER_SIZE)
+        if (blockingQueue.size() == App.bufferSize)
             blockingQueue.remove();
         blockingQueue.put(jsonObject);
         Count.incDataInQueueNum();

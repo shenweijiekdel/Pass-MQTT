@@ -8,11 +8,16 @@ import cn.com.bjfanuc.service.impl.DataServiceImpl;
 import cn.com.bjfanuc.utils.MQTTReciever;
 import cn.com.bjfanuc.utils.SingletonFactory;
 import com.sun.xml.internal.ws.streaming.XMLReaderException;
+import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.Element;
 import org.dom4j.io.SAXReader;
 import org.eclipse.paho.client.mqttv3.MqttException;
+import sun.rmi.runtime.Log;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
@@ -36,7 +41,7 @@ import java.util.concurrent.*;
 
 public class App {
     public static  String  PATH = App.class.getProtectionDomain().getCodeSource().getLocation().getPath();
-
+    public static Logger logger = Logger.getLogger(App.class);
     public static class DoStore implements Runnable{
 
         @Override
@@ -95,15 +100,19 @@ public class App {
         }
     }
 
-    public static final int BUFFER_SIZE = 1024;
+    public static  Integer bufferSize = 1024;
     public static Element emq;
     public static Element taos;
     public static Element redis;
     public static List<String> taosHosts = new ArrayList<>();
     static {
+//        PropertyConfigurator.configure("log4j.properties");
+        if (PATH == null){
+            System.err.println("path get failed.exit now!");
+            System.exit(1);
+        }
         int i = PATH.lastIndexOf("/");
         PATH = PATH.substring(0,i+1) ;
-        System.out.println("current PATH: "  + PATH);
         SAXReader reader = new SAXReader();
         try {
             Document document = reader.read(new File(PATH + "settings.xml"));
@@ -122,19 +131,18 @@ public class App {
         } catch (DocumentException e) {
             System.out.println(e.getMessage());
         }
+        try {
+         bufferSize = Integer.parseInt(emq.elementText("bufferSize"));
+
+        }catch (NumberFormatException e){
+            System.out.println("EMQ: bufferSize invalid，use default");
+        }
     }
     public static  DataService dataService = SingletonFactory.getBean(DataServiceImpl.class.getName());
-    public static BlockingQueue<JSONObject> blockingQueue = new ArrayBlockingQueue<>(BUFFER_SIZE);
-    public static String configFilePath = System.getProperty("PASS_CONFIG");
+    public static BlockingQueue<JSONObject> blockingQueue = new ArrayBlockingQueue<>(bufferSize);
     public static  MQTTReciever mqttReciever;
 
     public static void main(String[] args) throws MqttException {
-          /*  if (PATH == null){
-                System.err.println("path get failed.exit now!");
-            System.exit(1);
-            }
-*/
-
         try {
 
          mqttReciever = new MQTTReciever(blockingQueue);
@@ -143,6 +151,7 @@ public class App {
             System.exit(1);
         }
         if (dataService.createDatabase() != 1){
+            logger.info("database create failed.exit now!");
             System.err.println("database create failed.exit now!");
             System.exit(1);
         }

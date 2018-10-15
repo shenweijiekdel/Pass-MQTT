@@ -58,7 +58,7 @@ public class MQTTTestClient {
     private  int i = 0;
     public MQTTTestClient() {
         try {
-            mqtt.setHost("192.168.12.49", 1883);
+            mqtt.setHost("192.168.12.49", 6883);
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
@@ -72,8 +72,6 @@ public class MQTTTestClient {
     }
 
     public void publish(String msg) {
-        if (i == 10)
-            Thread.currentThread().stop();
         futureConnection.publish("dev/15a09834/up/1/FANUC_CNC/1", msg.getBytes(), QoS.values()[0], false);
         i ++;
     }
