@@ -14,7 +14,7 @@ public class DataDaoImpl implements DataDao {
     private List<String> hosts = App.taosHosts;
     private List<TaosUtil> taosUtils = new ArrayList<>();
     private Logger logger = LoggerFactory.getLogger(DataDaoImpl.class);
-
+    private String database = App.taos == null?null:App.taos.elementText("database");
     public DataDaoImpl() {
         if (hosts == null || hosts.size() == 0) {
             hosts.add("127.0.0.1");
@@ -23,6 +23,10 @@ public class DataDaoImpl implements DataDao {
         for (int i = 0; i < hosts.size(); i++) {
 
             taosUtils.add(new TaosUtil(hosts.get(i)));
+        }
+        if (database == null || "".equals(database)){
+            System.out.println("database is null!");
+            System.exit(1);
         }
     }
 
@@ -81,10 +85,10 @@ public class DataDaoImpl implements DataDao {
 
     @Override
     public int createDatabase() {
-        StringBuffer sql = new StringBuffer("create database if not exists fanuc_cnc_test");
+        StringBuffer sql = new StringBuffer("create database if not exists " + database);
         int val = -1;
         taosUtils.get(0).executeUpdateWithReconnect(sql.toString());
-        return taosUtils.get(0).executeUpdateWithReconnect("use fanuc_cnc_test");
+        return taosUtils.get(0).executeUpdateWithReconnect("use " + database);
     }
 
   /*  @Override
