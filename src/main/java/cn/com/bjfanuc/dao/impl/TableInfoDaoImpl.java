@@ -30,14 +30,13 @@ public class TableInfoDaoImpl implements TableInfoDao {
 
     @Override
     public String  getSqlSuffix(String subCmd) throws DataErrException {
+        if (subCmd == null)
+            return null;
             if (subcmdMap.get(subCmd) == null){
               redisUtils.get(Integer.parseInt(Thread.currentThread().getName())).get("SUBCMD_" + subCmd);
                 subcmdMap.put(subCmd,redisUtils.get(Integer.parseInt(Thread.currentThread().getName())).get("SUBCMD_" + subCmd));
             }
-            String value = subcmdMap.get(subCmd);
-            if (value == null)
-                throw new DataErrException("SUBCMD不合法");
-            return value;
+            return subcmdMap.get(subCmd);
 
     }
 }

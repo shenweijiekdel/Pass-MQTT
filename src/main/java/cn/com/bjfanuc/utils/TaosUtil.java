@@ -43,7 +43,7 @@ public class TaosUtil {
         this.jdbcUrl = JDBC_PROTOCAL + (host == null ? "127.0.0.1" : host) + ":" + port + "/"
                 + "?user=" + (user == null ? "root" : user) + "&password="
                 + (password == null ? "taosdata" : password);
-        TSDBJNIConnector.init(this.configDir);
+        TSDBJNIConnector.init(this.configDir ,"en_US.UTF-8", "Asia/Shanghai");
         this.doConnectToTaosd();
         createStatementWithReconnect();
     }
@@ -51,8 +51,8 @@ public class TaosUtil {
         try {
 
             Class.forName(TSDB_DRIVER);
-            while (true){
                int currentRetryTime = 1;
+            while (true){
             try {
                 if (conn == null || conn.isClosed()) {
                     conn = (Connection) DriverManager.getConnection(this.jdbcUrl);
@@ -62,7 +62,7 @@ public class TaosUtil {
                 }
             } catch (Exception e) {
 
-                logger.error("TaosDB: connect failed: "+e.getMessage()+" retry " + (currentRetryTime ++) + " time(s)" + ":" + e.getMessage());
+                logger.error("TaosDB: connect failed, retry " + (currentRetryTime ++) + " time(s)");
                 try {
                     Thread.sleep(retryDelay);
                 } catch (InterruptedException e1) {
@@ -104,7 +104,7 @@ public class TaosUtil {
 
         }
     }
-    public int executeUpdateWithReconnect(String sql){
+    public int executeUpdateWithReconnect(String sql) throws SQLException {
         int val = -1;
         int currentRetyTime = 1;
             while (statement == null){
@@ -118,16 +118,13 @@ public class TaosUtil {
             }
             while (true) {
 
-                try {
-                    val= 1;
-                   /* if (val != 1)
-                        throw new SQLException();*/
-                    val = statement.executeUpdate(sql.toString());
-                } catch (SQLException e) {
-                   logger.error("TaosDB: return: " + val + " errorCode:" + e);
-                }
 
-                if (val != 29)
+                    val = statement.executeUpdate(sql.toString());
+//                } catch (SQLException e) {
+//                   logger.error("TaosDB: return: " + val + " errorMessage:" + e);
+//                }
+
+                if (val != ReturnValue.LOST_CONNECTION)
                     break;
                logger.error("TaosDB: execute failed，retry " + (currentRetyTime ++) + " time(s)");
                 try {

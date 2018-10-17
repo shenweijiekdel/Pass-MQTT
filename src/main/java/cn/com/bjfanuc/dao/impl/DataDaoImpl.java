@@ -3,11 +3,13 @@ package cn.com.bjfanuc.dao.impl;
 import cn.com.bjfanuc.App;
 import cn.com.bjfanuc.dao.DataDao;
 import cn.com.bjfanuc.exception.DataErrException;
+import cn.com.bjfanuc.utils.ReturnValue;
 import cn.com.bjfanuc.utils.TaosUtil;
 import com.alibaba.fastjson.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.SQLException;
 import java.util.*;
 
 public class DataDaoImpl implements DataDao {
@@ -32,12 +34,12 @@ public class DataDaoImpl implements DataDao {
 
 
     @Override
-    public int saveData(JSONObject value) throws DataErrException {
+    public int saveData(JSONObject value) throws DataErrException, SQLException {
         return saveDataWhthoutPrepare(value);
     }
 
 
-    public int saveDataWhthoutPrepare(JSONObject value) throws DataErrException {
+    public int saveDataWhthoutPrepare(JSONObject value) throws DataErrException, SQLException {
         JSONObject jsonData = value.getJSONObject("DATA");
         Set<String> properties = jsonData.keySet();
         Set<Map.Entry<String, Object>> entries = jsonData.entrySet();
@@ -62,29 +64,29 @@ public class DataDaoImpl implements DataDao {
         }
         sql.append(")");
         int val = taosUtils.get(Integer.parseInt(Thread.currentThread().getName())).executeUpdateWithReconnect(sql.toString());
-        if (val == 28) {
-            throw new DataErrException("invalid column name");
+        if (val == ReturnValue.INVALID_SQL) {
+            throw new DataErrException("invalid SQL");
         }
-       else  if (val != 1 && val != 32)
-            logger.error("insert failed SQL:" + sql);
+       else  if (val != 1 && val != ReturnValue.TABLE_NOT_EXIST)
+            logger.error("insert failed SQL: return " + val + "\nSQL:" + sql);
 
         return val;
     }
 
 
-    public int createTable(String sqlSuffix, String tableName) {
+    public int createTable(String sqlSuffix, String tableName) throws SQLException {
 
-        StringBuffer sql = new StringBuffer("create table " + tableName);
+        StringBuffer sql = new StringBuffer("create table  " + tableName);
 
         sql.append(sqlSuffix);
         int val = -1;
         val = taosUtils.get(Integer.parseInt(Thread.currentThread().getName())).executeUpdateWithReconnect(sql.toString());
-
+        System.out.println(sql + " return " + val);
         return val;
     }
 
     @Override
-    public int createDatabase() {
+    public int createDatabase() throws SQLException {
         StringBuffer sql = new StringBuffer("create database if not exists " + database);
         int val = -1;
         taosUtils.get(0).executeUpdateWithReconnect(sql.toString());

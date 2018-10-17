@@ -1,6 +1,7 @@
 package cn.com.bjfanuc;
 
 
+import cn.com.bjfanuc.utils.ReturnValue;
 import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.JSONObject;
 import cn.com.bjfanuc.service.DataService;
@@ -14,13 +15,13 @@ import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.Element;
 import org.dom4j.io.SAXReader;
-import org.eclipse.paho.client.mqttv3.MqttException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sun.rmi.runtime.Log;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -55,7 +56,7 @@ public class App {
 //                    Count.incReadDataFromQueueNum();
 
 
-                    int   save = 0;
+                    int   save = -1;
 
                         save = dataService.save(take);
 
@@ -119,6 +120,7 @@ public class App {
          PATH = PATH.substring(0,i+1) ;
         SAXReader reader = new SAXReader();
         try {
+//            Document document = reader.read(new File("D:/settings.xml"));
             Document document = reader.read(new File(PATH + "emq_app.xml"));
           Element  xmlRoot = document.getRootElement();
          emq = xmlRoot.element("emq");
@@ -147,7 +149,7 @@ public class App {
     public static BlockingQueue<JSONObject> blockingQueue = new ArrayBlockingQueue<>(bufferSize);
     public static  MQTTReciever mqttReciever;
 
-    public static void main(String[] args) throws MqttException {
+    public static void main(String[] args) {
         try {
 
          mqttReciever = new MQTTReciever(blockingQueue);
@@ -155,8 +157,14 @@ public class App {
             logger.error(e.getMessage());
             System.exit(1);
         }
-        if (dataService.createDatabase() != 1){
-            logger.error("database create failed.exit now!");
+        int val = -1;
+        try {
+            if (( val = dataService.createDatabase()) != ReturnValue.SUCCESS){
+                logger.error("database create failed.exit now! :return "  + val);
+                System.exit(1);
+            }
+        } catch (SQLException e) {
+            logger.error(e.getMessage());
             System.exit(1);
         }
         DoStore doStore = new DoStore();

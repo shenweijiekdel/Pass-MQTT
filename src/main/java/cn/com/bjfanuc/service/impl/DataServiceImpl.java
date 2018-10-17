@@ -7,12 +7,15 @@ import cn.com.bjfanuc.dao.impl.DataDaoImpl;
 import cn.com.bjfanuc.dao.impl.TableInfoDaoImpl;
 import cn.com.bjfanuc.exception.DataErrException;
 import cn.com.bjfanuc.service.DataService;
+import cn.com.bjfanuc.utils.ReturnValue;
 import cn.com.bjfanuc.utils.SingletonFactory;
 import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sun.rmi.runtime.Log;
+
+import java.sql.SQLException;
 
 
 public class DataServiceImpl implements DataService {
@@ -23,17 +26,26 @@ public class DataServiceImpl implements DataService {
     public int createTableAndSaveData(JSONObject jsonObject) throws DataErrException {
         String sqlSuffix = tableInfoDao.getSqlSuffix(jsonObject.getString("SUBCMD"));
         String tableName = jsonObject.getJSONObject("DATA").getString("CNC_ID");
-
+        int val = -1;
         if (sqlSuffix == null) {
-            throw new DataErrException("SUBCMD is not exist");
+            throw new DataErrException("invalid SUBCMD");
         }
-        dataDao.createTable(sqlSuffix, tableName);   //这里改过了，不应该建表成功才插入，这样其中一个线程建表以后其他两个线程建表不成功就不存了
+        try {
+            int table = dataDao.createTable(sqlSuffix, tableName);//这里改过了，不应该建表成功才插入，这样其中一个线程建表以后其他两个线程建表不成功就不存了
+//            val = dataDao.saveData(jsonObject);
+        } catch (SQLException e) {
+                        if (e.getErrorCode() == 32)
+                        logger.error("Table have been created but not exists: return " + tableName + "\n" + e.getMessage());
+                        else{
+                            logger.error(e.getMessage());
+                        }
+        }
 
 //            Count.incCreateTableNum();
 
 //            logger.error("create table failed");
 
-        return dataDao.saveData(jsonObject);
+        return val;
 
     }
 
@@ -45,16 +57,20 @@ public class DataServiceImpl implements DataService {
         try {
             String tableName = jsonObject.getJSONObject("DATA").getString("CNC_ID");
             if (tableName == null)
-                throw new JSONException("CNC_ID is null！");
-            val = dataDao.saveData(jsonObject);
+                throw new JSONException("invalid CNC_ID");
+            try {
 
+                val = dataDao.saveData(jsonObject);
 
-            if (val == 32) { //表不存在
-                val = createTableAndSaveData(jsonObject);
+            } catch (SQLException e){
+               if (e.getErrorCode() == ReturnValue.TABLE_NOT_EXIST){
+                   val = createTableAndSaveData(jsonObject);
+
+               }
+
             }
-
             } catch (DataErrException e) {
-//            logger.error("Data error: " + e.getMessage());
+            logger.error("Data error: " + e.getMessage());
         }catch (NullPointerException e){
             logger.error("Data error: property 'DATA' is null");
         }
@@ -63,7 +79,7 @@ public class DataServiceImpl implements DataService {
 
     }
     @Override
-    public int createDatabase(){
+    public int createDatabase() throws SQLException {
       return  dataDao.createDatabase();
     }
 }

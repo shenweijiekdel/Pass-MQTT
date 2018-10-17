@@ -1,7 +1,8 @@
 package cn.com.bjfanuc.utils;
 
 import cn.com.bjfanuc.App;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import sun.rmi.runtime.Log;
 
@@ -11,7 +12,7 @@ public class RedisUtil {
     private Jedis jedis;
     private String password = "";
     private int retryDelay = 2000;
-    private Logger logger = Logger.getLogger(RedisUtil.class);
+    private Logger logger = LoggerFactory.getLogger(RedisUtil.class);
     {
 
             host = App.redis != null?App.redis.elementText("host"):host;
