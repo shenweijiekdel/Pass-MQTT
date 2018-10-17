@@ -1,7 +1,9 @@
 package cn.com.bjfanuc.utils;
 
 import cn.com.bjfanuc.App;
+import org.apache.log4j.Logger;
 import redis.clients.jedis.Jedis;
+import sun.rmi.runtime.Log;
 
 public class RedisUtil {
     private String host = "127.0.0.1";
@@ -9,6 +11,7 @@ public class RedisUtil {
     private Jedis jedis;
     private String password = "";
     private int retryDelay = 2000;
+    private Logger logger = Logger.getLogger(RedisUtil.class);
     {
 
             host = App.redis != null?App.redis.elementText("host"):host;
@@ -18,24 +21,24 @@ public class RedisUtil {
             port =  Integer.parseInt(App.redis.elementText("port"));
 
         } catch (Exception e){
-            System.out.println("Redis: port invalid，use default");
+            logger.info("Redis: port invalid，use default");
         }
         try {
 
         }catch (NumberFormatException e){
-            System.out.println("Redis: retryTimes invalid，use default");
+            logger.info("Redis: retryTimes invalid，use default");
 
         }
         try {
             retryDelay = Integer.parseInt(App.taos == null?null:App.taos.attributeValue("retryDelay"));
         }catch (NumberFormatException e){
-            System.out.println("Redis: retryDelay invalid，use default");
+            logger.info("Redis: retryDelay invalid，use default");
 
         }
     }
     public RedisUtil(){
         connect();
-        System.out.println("Redis: connect to " + host  + ":" + port);
+        logger.info("Redis: connect to " + host  + ":" + port);
     }
     public void connect(){
         int currentRetryTime = 1;

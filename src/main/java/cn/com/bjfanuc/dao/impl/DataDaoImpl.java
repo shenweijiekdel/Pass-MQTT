@@ -5,12 +5,15 @@ import cn.com.bjfanuc.dao.DataDao;
 import cn.com.bjfanuc.exception.DataErrException;
 import cn.com.bjfanuc.utils.TaosUtil;
 import com.alibaba.fastjson.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
 public class DataDaoImpl implements DataDao {
     private List<String> hosts = App.taosHosts;
     private List<TaosUtil> taosUtils = new ArrayList<>();
+    private Logger logger = LoggerFactory.getLogger(DataDaoImpl.class);
 
     public DataDaoImpl() {
         if (hosts == null || hosts.size() == 0) {
@@ -56,11 +59,10 @@ public class DataDaoImpl implements DataDao {
         sql.append(")");
         int val = taosUtils.get(Integer.parseInt(Thread.currentThread().getName())).executeUpdateWithReconnect(sql.toString());
         if (val == 28) {
-            System.out.println(sql);
             throw new DataErrException("invalid column name");
         }
-        if (val == 0)
-            System.out.println(sql);
+       else  if (val != 1 && val != 32)
+            logger.error("insert failed SQL:" + sql);
 
         return val;
     }
@@ -79,10 +81,10 @@ public class DataDaoImpl implements DataDao {
 
     @Override
     public int createDatabase() {
-        StringBuffer sql = new StringBuffer("create database if not exists fanuc_cnc");
+        StringBuffer sql = new StringBuffer("create database if not exists fanuc_cnc_test");
         int val = -1;
         taosUtils.get(0).executeUpdateWithReconnect(sql.toString());
-        return taosUtils.get(0).executeUpdateWithReconnect("use fanuc_cnc");
+        return taosUtils.get(0).executeUpdateWithReconnect("use fanuc_cnc_test");
     }
 
   /*  @Override

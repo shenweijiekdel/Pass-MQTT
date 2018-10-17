@@ -1,5 +1,5 @@
 Manifest-Version: 1.0
-Class-Path: spring-jdbc-5.0.0.RELEASE.jar spring-beans-5.0.0.RELEASE.j
+Class-Path: . spring-jdbc-5.0.0.RELEASE.jar spring-beans-5.0.0.RELEASE.j
  ar fastjson-1.2.28.jar protobuf-java-2.6.0.jar mysql-connector-java-8
  .0.12.jar mchange-commons-java-0.2.11.jar org.eclipse.paho.client.mqt
  tv3-1.1.1.jar annotations-java5-16.0.3.jar hawtdispatch-1.22.jar spri

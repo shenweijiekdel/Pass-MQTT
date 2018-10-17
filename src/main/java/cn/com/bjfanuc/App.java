@@ -8,15 +8,15 @@ import cn.com.bjfanuc.service.impl.DataServiceImpl;
 import cn.com.bjfanuc.utils.MQTTReciever;
 import cn.com.bjfanuc.utils.SingletonFactory;
 import com.sun.xml.internal.ws.streaming.XMLReaderException;
-import org.apache.log4j.BasicConfigurator;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
+
+
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.Element;
 import org.dom4j.io.SAXReader;
 import org.eclipse.paho.client.mqttv3.MqttException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sun.rmi.runtime.Log;
 
 import java.io.File;
@@ -41,7 +41,8 @@ import java.util.concurrent.*;
 
 public class App {
     public static  String  PATH = App.class.getProtectionDomain().getCodeSource().getLocation().getPath();
-    public static Logger logger = Logger.getLogger(App.class);
+
+    public static Logger logger = LoggerFactory.getLogger(App.class);
     public static class DoStore implements Runnable{
 
         @Override
@@ -51,27 +52,27 @@ public class App {
                     JSONObject take =  null;
 
                     take = blockingQueue.take();
-                    Count.incReadDataFromQueueNum();
+//                    Count.incReadDataFromQueueNum();
 
 
                     int   save = 0;
 
                         save = dataService.save(take);
 
-                    Count.incSavedDataNum();
+//                    Count.incSavedDataNum();
                     if (save == 1){
 //                        while (save -- > 0){
                             Count.incSaveSuccess();
 //                        }
                     } else{
-                        Count.incSaveFailure();
+//                        Count.incSaveFailure();
+                        logger.error("save failed! return : " + save);
 
-                    System.out.println( Count.print() + " return：" + save);
                     }
-                    if (Count.saveSuccess % 10000== 0)
-                        System.out.println( Count.print());
+//                    if (Count.saveSuccess % 10000== 0)
+                    System.out.println( Count.print());
                 }  catch (InterruptedException e) {
-                    e.printStackTrace();
+                   logger.error(e.getMessage());
                 }
             }
         }
@@ -86,13 +87,17 @@ public class App {
 
 
                 } catch (JSONException e) {
-                    System.err.println("data error: " + e.getMessage());
+                   logger.error("data error: " + e.getMessage());
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                  logger.error(e.toString());
                 } catch (UnsupportedEncodingException e) {
-                    System.err.println("encode error: " + e.getMessage());
-                } catch (Exception e) {
-                    e.printStackTrace();
+                    logger.error("encode error: " + e.getMessage());
+                } catch (NullPointerException e){
+
+                   logger.error("data error: NULL");
+
+                }catch (Exception e) {
+                    logger.error(e.toString());
                 }
 
 
@@ -106,16 +111,15 @@ public class App {
     public static Element redis;
     public static List<String> taosHosts = new ArrayList<>();
     static {
-//        PropertyConfigurator.configure("log4j.properties");
         if (PATH == null){
-            System.err.println("path get failed.exit now!");
+            logger.info("path get failed.exit now!");
             System.exit(1);
         }
         int i = PATH.lastIndexOf("/");
-        PATH = PATH.substring(0,i+1) ;
+         PATH = PATH.substring(0,i+1) ;
         SAXReader reader = new SAXReader();
         try {
-            Document document = reader.read(new File(PATH + "settings.xml"));
+            Document document = reader.read(new File(PATH + "emq_app.xml"));
           Element  xmlRoot = document.getRootElement();
          emq = xmlRoot.element("emq");
          taos = xmlRoot.element("taos-db");
@@ -129,13 +133,14 @@ public class App {
                 }
             }
         } catch (DocumentException e) {
-            System.out.println(e.getMessage());
+
+            logger.error(e.getNestedException().toString());
         }
         try {
-         bufferSize = Integer.parseInt(emq.elementText("bufferSize"));
+         bufferSize = Integer.parseInt(emq == null?null:emq.elementText("bufferSize"));
 
         }catch (NumberFormatException e){
-            System.out.println("EMQ: bufferSize invalid，use default");
+            logger.warn("EMQ: bufferSize invalid，use default");
         }
     }
     public static  DataService dataService = SingletonFactory.getBean(DataServiceImpl.class.getName());
@@ -147,12 +152,11 @@ public class App {
 
          mqttReciever = new MQTTReciever(blockingQueue);
         } catch (XMLReaderException e){
-            System.err.println(e.getMessage());
+            logger.error(e.getMessage());
             System.exit(1);
         }
         if (dataService.createDatabase() != 1){
-            logger.info("database create failed.exit now!");
-            System.err.println("database create failed.exit now!");
+            logger.error("database create failed.exit now!");
             System.exit(1);
         }
         DoStore doStore = new DoStore();

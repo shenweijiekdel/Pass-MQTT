@@ -7,6 +7,9 @@ import java.sql.Statement;
 
 import cn.com.bjfanuc.App;
 import com.taosdata.jdbc.TSDBJNIConnector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import sun.rmi.runtime.Log;
 
 public class TaosUtil {
     private String host;
@@ -19,19 +22,19 @@ public class TaosUtil {
     private static final String JDBC_PROTOCAL = "jdbc:TSDB://";
     private Connection conn = null;
     private Statement statement = null;
-    private String dbName = "fanuc_cnc";
     private int retryDelay = 2000; //动作执行失败后重试时间间隔
+    private Logger logger = LoggerFactory.getLogger(TaosUtil.class);
 
     {
 
         try {
             if (TSDB_DRIVER == null){
-                System.err.println("TaosDB: JDBC Driver is null. exit now!");
+                logger.error("TaosDB: JDBC Driver is null. exit now!");
                 System.exit(1);
             }
             retryDelay = Integer.parseInt(App.taos == null?null:App.taos.attributeValue("retryDelay"));  //xml文件读取有问题
         }catch (NumberFormatException e){
-            System.out.println("TaosDB: retryDelay invalid，use default");
+            logger.warn("TaosDB: retryDelay invalid，use default");
 
         }
     }
@@ -59,7 +62,7 @@ public class TaosUtil {
                 }
             } catch (Exception e) {
 
-                System.err.println("TaosDB: connect failed: "+e.getMessage()+" retry " + (currentRetryTime ++) + " time(s)" + ":" + e.getMessage());
+                logger.error("TaosDB: connect failed: "+e.getMessage()+" retry " + (currentRetryTime ++) + " time(s)" + ":" + e.getMessage());
                 try {
                     Thread.sleep(retryDelay);
                 } catch (InterruptedException e1) {
@@ -69,7 +72,7 @@ public class TaosUtil {
             }
 
         } catch (ClassNotFoundException e){
-            System.err.println("TaosDB: cannot find JDBC Driver!");
+            logger.error("TaosDB: cannot find JDBC Driver!");
             System.exit(1);
         }
         return this.conn;
@@ -82,15 +85,14 @@ public class TaosUtil {
             try {
                 statement = conn.createStatement();
             } catch (SQLException e) {
-                e.printStackTrace();
-                System.err.println("TaosDB: connect failed!: "+e.getMessage()+" retry " + (currentRetryTime ++) + " time(s)");
+                logger.error("TaosDB: connect failed!: "+e.getMessage()+" retry " + (currentRetryTime ++) + " time(s)");
 
                     reConnect();
 
                 try {
                         Thread.sleep(retryDelay);
                     } catch (InterruptedException e2) {
-                        e2.printStackTrace();
+                    logger.error(e2.toString());
                     }
 
 
@@ -106,12 +108,12 @@ public class TaosUtil {
         int val = -1;
         int currentRetyTime = 1;
             while (statement == null){
-                System.err.println("TaosDB: statement create failed.retry " + currentRetyTime++ + " time(s)");
+              logger.error("TaosDB: statement create failed.retry " + currentRetyTime++ + " time(s)");
                createStatementWithReconnect();
                 try {
                     Thread.sleep(retryDelay);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                   logger.error(e.toString());
                 }
             }
             while (true) {
@@ -122,17 +124,16 @@ public class TaosUtil {
                         throw new SQLException();*/
                     val = statement.executeUpdate(sql.toString());
                 } catch (SQLException e) {
-                    e.printStackTrace();
-                    System.err.println("TaosDB: return: " + val + " errorCode:" + e.getErrorCode());
+                   logger.error("TaosDB: return: " + val + " errorCode:" + e);
                 }
 
                 if (val != 29)
                     break;
-                System.err.println("TaosDB: execute failed，retry " + (currentRetyTime ++) + " time(s)");
+               logger.error("TaosDB: execute failed，retry " + (currentRetyTime ++) + " time(s)");
                 try {
                     Thread.sleep(retryDelay);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                   logger.error(e.toString());
 
                 }
             }

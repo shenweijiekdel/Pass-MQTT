@@ -6,10 +6,14 @@ import com.alibaba.fastjson.JSONObject;
 import org.dom4j.Element;
 import org.fusesource.mqtt.client.*;
 import org.fusesource.mqtt.codec.MQTTFrame;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import sun.rmi.runtime.Log;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
@@ -22,17 +26,22 @@ public class MQTTReciever {
 
         @Override
         public void debug(String message, Object... args) {
-            System.out.println(message);
+            logger.info(message);
+           if (args.length > 0){
+               for (int i=0; i<args.length; i++){
+                   logger.info(args[i].toString());
+               }
+           }
         }
 
         @Override
         public void onSend(MQTTFrame frame) {
-//        System.out.println("onsend");
+//        logger.info("onsend");
         }
 
         @Override
         public void onReceive(MQTTFrame frame) {
-//        System.out.println("onrecieve");
+//        logger.info("onrecieve");
         }
     }
     private String host = App.emq != null?App.emq.elementText("host"):null;
@@ -45,32 +54,33 @@ public class MQTTReciever {
     private List<Topic> topics = new ArrayList<>();
     private FutureConnection connection;
     private BlockingQueue<JSONObject> blockingQueue;
+    private Logger logger = LoggerFactory.getLogger(MQTTReciever.class);
     public MQTTReciever( BlockingQueue<JSONObject> blockingQueue) {
         this.blockingQueue = blockingQueue;
         try {
             port = App.emq != null?Integer.parseInt(App.emq.elementText("port")):null;
         }catch (NumberFormatException e){
-            System.out.println("EMQ: port invalid，use default");
+            logger.warn("EMQ: port invalid，use default");
         }
         try {
             if (host == null){
-                System.out.println("EMQ: host invalid，use default");
+                logger.warn("EMQ: host invalid，use default");
                 host = "localhost";
             }
             if (port == null){
-                System.out.println("EMQ: port invalid，use default");
+                logger.warn("EMQ: port invalid，use default");
                 port = 1883;
 
             }
             if (encode == null){
-                System.out.println("EMQ: encoding invalid，use default");
+                logger.warn("EMQ: encoding invalid，use default");
                 encode = "utf-8";
 
             }
         mqtt.setHost(host, port );
 
         }  catch (URISyntaxException e) {
-            System.err.println("EMQ: host config incorrect,exit now!");
+            logger.error("EMQ: host config incorrect,exit now!");
             System.exit(1);
         }
         mqtt.setClientId(UUID.randomUUID().toString());
@@ -90,7 +100,7 @@ public class MQTTReciever {
 
                 topics.add(new Topic(name != null?name:"",qos != null? QoS.values()[Integer.parseInt(qos)]:QoS.EXACTLY_ONCE));
                 } catch (Exception e){
-                    e.printStackTrace();
+                    logger.error(e.toString());
                 }
 
             }
@@ -98,7 +108,7 @@ public class MQTTReciever {
         Topic[] topicArr = new Topic[topics.size()];
         topicArr = topics.toArray(topicArr);
         connection.subscribe(topicArr);
-            System.out.println("EMQ: user "+user+" connect to " + host + ":" + port);
+            logger.info("EMQ: user "+user+" connect to " + host + ":" + port);
     }
     public void recieve() throws Exception {
         Future<Message> futrueMessage = connection.receive();
