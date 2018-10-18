@@ -27,7 +27,7 @@ public class DataDaoImpl implements DataDao {
             taosUtils.add(new TaosUtil(hosts.get(i)));
         }
         if (database == null || "".equals(database)){
-            System.out.println("database is null!");
+          logger.error("database is null!");
             System.exit(1);
         }
     }
@@ -81,7 +81,6 @@ public class DataDaoImpl implements DataDao {
         sql.append(sqlSuffix);
         int val = -1;
         val = taosUtils.get(Integer.parseInt(Thread.currentThread().getName())).executeUpdateWithReconnect(sql.toString());
-        System.out.println(sql + " return " + val);
         return val;
     }
 

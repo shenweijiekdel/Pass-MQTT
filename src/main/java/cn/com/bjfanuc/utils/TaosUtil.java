@@ -118,21 +118,23 @@ public class TaosUtil {
             }
             while (true) {
 
-
-                    val = statement.executeUpdate(sql.toString());
-//                } catch (SQLException e) {
-//                   logger.error("TaosDB: return: " + val + " errorMessage:" + e);
-//                }
-
-                if (val != ReturnValue.LOST_CONNECTION)
-                    break;
-               logger.error("TaosDB: execute failed，retry " + (currentRetyTime ++) + " time(s)");
                 try {
-                    Thread.sleep(retryDelay);
-                } catch (InterruptedException e) {
-                   logger.error(e.toString());
-
+                    val = statement.executeUpdate(sql.toString());
+                    break;
+                }catch (SQLException e){
+                    if (e.getErrorCode() == ReturnValue.LOST_CONNECTION){
+                        try {
+                            logger.error("TaosDB: execute failed，retry " + (currentRetyTime ++) + " time(s)");
+                            Thread.sleep(retryDelay);
+                        } catch (InterruptedException e1) {
+                            logger.error(e1.toString());
+                        }
+                    } else {
+                        throw e;
+                    }
                 }
+
+
             }
         return val;
     }
@@ -180,7 +182,7 @@ public class TaosUtil {
             if (this.conn != null)
                 this.conn.close();
         } catch (SQLException e) {
-            e.printStackTrace();
+           logger.error(e.getMessage());
             conn = null;
         }
     }

@@ -32,9 +32,9 @@ public class DataServiceImpl implements DataService {
         }
         try {
             int table = dataDao.createTable(sqlSuffix, tableName);//这里改过了，不应该建表成功才插入，这样其中一个线程建表以后其他两个线程建表不成功就不存了
-//            val = dataDao.saveData(jsonObject);
+            val = dataDao.saveData(jsonObject);
         } catch (SQLException e) {
-                        if (e.getErrorCode() == 32)
+                        if (e.getErrorCode() == ReturnValue.TABLE_NOT_EXIST)
                         logger.error("Table have been created but not exists: return " + tableName + "\n" + e.getMessage());
                         else{
                             logger.error(e.getMessage());
