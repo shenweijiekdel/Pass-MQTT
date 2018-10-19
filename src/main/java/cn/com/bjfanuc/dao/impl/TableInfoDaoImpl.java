@@ -4,6 +4,7 @@ import cn.com.bjfanuc.App;
 import cn.com.bjfanuc.dao.TableInfoDao;
 import cn.com.bjfanuc.exception.DataErrException;
 import cn.com.bjfanuc.utils.RedisUtil;
+import org.jetbrains.annotations.TestOnly;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,6 +30,7 @@ public class TableInfoDaoImpl implements TableInfoDao {
 
 
     @Override
+
     public String  getSqlSuffix(String subCmd) throws DataErrException {
         if (subCmd == null)
             return null;

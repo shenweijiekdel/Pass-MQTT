@@ -5,7 +5,7 @@
     　　　　　　　　　　　　
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
         　　　　　　　　　　　　　　
-        <fileNamePattern>logs/inf_%d{yyyy-MM-dd}.log</fileNamePattern>
+        <fileNamePattern>${HOME}/emq_app/logs/inf_%d{yyyy-MM-dd}.log</fileNamePattern>
         　　　　　　　　　　　　　　
         <maxHistory>2</maxHistory>
         　　　　　　　　　　　　
@@ -15,7 +15,7 @@
 </filter>　　
     <encoder>
         　　　　　　　　　　　　　　
-        <pattern>%d{{yyyy-MM-dd HH:mm:ss.SSS}  %-4relative  [%thread]  [ %-5level ]  -  %msg%n</pattern>
+        <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS}  %-4relative  [%thread]  [ %-5level ]  -  %msg%n</pattern>
         　　　　　　　　　　　　
     </encoder>
     　　　　　　　　　　
@@ -24,7 +24,7 @@
     　　　　　　　　　　　　
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
         　　　　　　　　　　　　　　
-        <fileNamePattern>logs/err_%d{yyyy-MM-dd}.log</fileNamePattern>
+        <fileNamePattern>${HOME}/emq_app/logs/err_%d{yyyy-MM-dd}.log</fileNamePattern>
         　　　　　　　　　　　　　　
         <maxHistory>2</maxHistory>
         　　　　　　　　　　　　

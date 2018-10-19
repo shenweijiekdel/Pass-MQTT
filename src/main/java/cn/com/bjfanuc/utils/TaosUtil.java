@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import cn.com.bjfanuc.App;
+import cn.com.bjfanuc.Count;
 import com.taosdata.jdbc.TSDBJNIConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -176,7 +177,6 @@ public class TaosUtil {
 
 
     }
-
     public void doCloseConnection() {
         try {
             if (this.conn != null)

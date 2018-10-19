@@ -41,7 +41,7 @@ public class Count {
     }
     public static String  print(){
 //        String s = "建表数：" + createTableNum + ",\t接受数：" + mqttRecieveDataNum +",\t入队数：" + dataInQueueNum +  ",\t出队数" + readDataFromQueueNum +  ",\t执行存储数：" +savedDataNum + ",\t成功数：" + saveSuccess + ",\t失败数：" + saveFailure;
-String s = "入队数：" + dataInQueueNum + "存储数：" + saveSuccess;
+String s = "入队数：" + dataInQueueNum + " 存储数：" + saveSuccess;
         return "线程" +Thread.currentThread().getName() + ": " + s;
     }
 

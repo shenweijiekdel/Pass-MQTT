@@ -27,17 +27,7 @@ import java.util.concurrent.*;
 
 
 /**
- * Hello world!
- * 18:06:11[com.taosdata.jdbc.TSDBConnectionImpl(106)-ERROR] failed to connect to server
- * java.sql.SQLException: TDengine Error:failed to connect to server
- * 	at com.taosdata.jdbc.TSDBConnectionImpl.createStatement(TSDBConnectionImpl.java:107)
- * 	at TaosUtil.createStatementWithReconnect(TaosUtil.java:89)
- * 	at TaosUtil.saveDataBeforeTaosNextVersion(TaosUtil.java:169)
- * 	at DataDaoImpl.saveData(DataDaoImpl.java:43)
- * 	at DataServiceImpl.save(DataServiceImpl.java:54)
- * 	at App$DoStore.run(App.java:47)
- * 	at java.lang.Thread.run(Thread.java:748)
- * 存在问题在初始化时没连上数据库的话，之后连接也一直失败
+ *
  */
 
 public class App {
@@ -65,10 +55,6 @@ public class App {
 //                        while (save -- > 0){
                             Count.incSaveSuccess();
 //                        }
-                    } else{
-//                        Count.incSaveFailure();
-                        logger.error("save failed! return : " + save);
-
                     }
 //                    if (Count.saveSuccess % 10000== 0)
                     System.out.println( Count.print());
@@ -160,11 +146,11 @@ public class App {
         int val = -1;
         try {
             if (( val = dataService.createDatabase()) != ReturnValue.SUCCESS){
-                logger.error("database create failed.exit now! :return "  + val);
+
                 System.exit(1);
             }
         } catch (SQLException e) {
-            logger.error(e.getMessage());
+            logger.error("database create failed.exit now! :error "  +e.getErrorCode() );
             System.exit(1);
         }
         DoStore doStore = new DoStore();

@@ -23,22 +23,29 @@ public class DataServiceImpl implements DataService {
     private TableInfoDao tableInfoDao = SingletonFactory.getBean(TableInfoDaoImpl.class.getName());
     private Logger logger = LoggerFactory.getLogger(DataServiceImpl.class);
 
-    public int createTableAndSaveData(JSONObject jsonObject) throws DataErrException {
-        String sqlSuffix = tableInfoDao.getSqlSuffix(jsonObject.getString("SUBCMD"));
-        String tableName = jsonObject.getJSONObject("DATA").getString("CNC_ID");
+    public int createMetricAndCreateTable(String tableName, String subCmd) throws DataErrException {
+        String sqlSuffix = tableInfoDao.getSqlSuffix(subCmd);
+        if (sqlSuffix == null)
+            throw new DataErrException("invalid subCmd " + subCmd);
         int val = -1;
-        if (sqlSuffix == null) {
-            throw new DataErrException("invalid SUBCMD");
-        }
         try {
-            int table = dataDao.createTable(sqlSuffix, tableName);//这里改过了，不应该建表成功才插入，这样其中一个线程建表以后其他两个线程建表不成功就不存了
-            val = dataDao.saveData(jsonObject);
+            dataDao.createMertic(sqlSuffix, subCmd);
+            val = dataDao.createTableUsingTags(tableName, subCmd);
         } catch (SQLException e) {
-                        if (e.getErrorCode() == ReturnValue.TABLE_NOT_EXIST)
-                        logger.error("Table have been created but not exists: return " + tableName + "\n" + e.getMessage());
-                        else{
-                            logger.error(e.getMessage());
-                        }
+            logger.error(e.getMessage() + " return: " + e.getErrorCode());
+        }
+        return val;
+    }
+
+    public int createTableAndSaveData(JSONObject jsonData, String tableName, String subCmd) throws DataErrException {
+        int val = -1;
+
+        try {
+            createTable(subCmd, tableName);//这里改过了，不应该建表成功才插入，这样其中一个线程建表以后其他两个线程建表不成功就不存了
+            val = dataDao.saveData(jsonData, tableName);
+        } catch (SQLException e) {
+            logger.error(e.getMessage());
+
         }
 
 //            Count.incCreateTableNum();
@@ -49,37 +56,57 @@ public class DataServiceImpl implements DataService {
 
     }
 
+    public int createTable(String subCmd, String tableName) throws SQLException, DataErrException {
+        int val = -1;
+        try {
+            dataDao.createTableUsingTags(subCmd, tableName);
+
+        } catch (SQLException e) {
+            if (e.getErrorCode() == ReturnValue.TABLE_NOT_EXIST) {
+                val = createMetricAndCreateTable(tableName, subCmd);
+
+            } else {
+                logger.error(e.getMessage() + " return: " + e.getErrorCode());
+            }
+        }
+
+        return val;
+    }
+
     @Override
     public int save(JSONObject jsonObject) {
 
         int val = -1;
 
         try {
-            String tableName = jsonObject.getJSONObject("DATA").getString("CNC_ID");
+            JSONObject data = jsonObject.getJSONObject("DATA");
+            String subCmd = jsonObject.getString("SUBCMD");
+            String tableName = data.getString("FANUC_CNC".equals(subCmd) ? "CNC_ID" : "DEV_ID");
             if (tableName == null)
-                throw new JSONException("invalid CNC_ID");
+                throw new DataErrException("invalid SubCmd");
             try {
 
-                val = dataDao.saveData(jsonObject);
+                val = dataDao.saveData(data, tableName);
 
-            } catch (SQLException e){
-               if (e.getErrorCode() == ReturnValue.TABLE_NOT_EXIST){
-                   val = createTableAndSaveData(jsonObject);
+            } catch (SQLException e) {
+                if (e.getErrorCode() == ReturnValue.TABLE_NOT_EXIST) {
+                    val = createTableAndSaveData(data, tableName, subCmd);
 
-               }
+                }
 
             }
-            } catch (DataErrException e) {
+        } catch (DataErrException e) {
             logger.error("Data error: " + e.getMessage());
-        }catch (NullPointerException e){
+        } catch (NullPointerException e) {
             logger.error("Data error: property 'DATA' is null");
         }
 
         return val;
 
     }
+
     @Override
     public int createDatabase() throws SQLException {
-      return  dataDao.createDatabase();
+        return dataDao.createDatabase();
     }
 }

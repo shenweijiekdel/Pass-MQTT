@@ -16,7 +16,8 @@ public class DataDaoImpl implements DataDao {
     private List<String> hosts = App.taosHosts;
     private List<TaosUtil> taosUtils = new ArrayList<>();
     private Logger logger = LoggerFactory.getLogger(DataDaoImpl.class);
-    private String database = App.taos == null?null:App.taos.elementText("database");
+    private String database = App.taos == null ? null : App.taos.elementText("database");
+
     public DataDaoImpl() {
         if (hosts == null || hosts.size() == 0) {
             hosts.add("127.0.0.1");
@@ -26,25 +27,23 @@ public class DataDaoImpl implements DataDao {
 
             taosUtils.add(new TaosUtil(hosts.get(i)));
         }
-        if (database == null || "".equals(database)){
-          logger.error("database is null!");
+        if (database == null || "".equals(database)) {
+            logger.error("database is null!");
             System.exit(1);
         }
     }
 
 
     @Override
-    public int saveData(JSONObject value) throws DataErrException, SQLException {
-        return saveDataWhthoutPrepare(value);
+    public int saveData(JSONObject jsonData, String tableName) throws DataErrException, SQLException {
+        return saveDataWhthoutPrepare(jsonData, tableName);
     }
 
 
-    public int saveDataWhthoutPrepare(JSONObject value) throws DataErrException, SQLException {
-        JSONObject jsonData = value.getJSONObject("DATA");
+    public int saveDataWhthoutPrepare(JSONObject jsonData, String tableName) throws DataErrException, SQLException {
         Set<String> properties = jsonData.keySet();
         Set<Map.Entry<String, Object>> entries = jsonData.entrySet();
         Iterator<Map.Entry<String, Object>> iterator = entries.iterator();
-        String tableName = jsonData.getString("CNC_ID");
         StringBuffer sql = new StringBuffer("insert into " + tableName);
         String col = properties.toString().replaceAll("\\[", "").replaceAll("\\]", "");
         sql.append("(").append(col).append(")");
@@ -67,22 +66,30 @@ public class DataDaoImpl implements DataDao {
         if (val == ReturnValue.INVALID_SQL) {
             throw new DataErrException("invalid SQL");
         }
-       else  if (val != 1 && val != ReturnValue.TABLE_NOT_EXIST)
-            logger.error("insert failed SQL: return " + val + "\nSQL:" + sql);
-
+    /*   else  if (val != 1 && val != ReturnValue.TABLE_NOT_EXIST)
+            logger.error("insert failed SQL: return " + val + "\nSQL:" + sql); //可能没有这种可能，因为都通过异常来处理了
+*/
         return val;
     }
+    //使用Metric时创建Metric
+    @Override
+    public int createTableUsingTags(String metricName, String tableName) throws SQLException {
+        StringBuffer sql = new StringBuffer("create table ");
+        sql.append(tableName).append(" using ").append(metricName)
+                .append(" tags (")
+                .append("'")
+                .append(tableName)
+                .append("')");
+        return taosUtils.get(Integer.parseInt(Thread.currentThread().getName())).executeUpdateWithReconnect(sql.toString());
 
+    }
+   /* public int createTable(String sqlSuffix, String tableName) throws SQLException {
 
-    public int createTable(String sqlSuffix, String tableName) throws SQLException {
-
-        StringBuffer sql = new StringBuffer("create table  " + tableName);
-
+        StringBuffer sql = new StringBuffer("create table  ");
         sql.append(sqlSuffix);
-        int val = -1;
-        val = taosUtils.get(Integer.parseInt(Thread.currentThread().getName())).executeUpdateWithReconnect(sql.toString());
-        return val;
-    }
+
+        return taosUtils.get(Integer.parseInt(Thread.currentThread().getName())).executeUpdateWithReconnect(sql.toString());
+    }*/
 
     @Override
     public int createDatabase() throws SQLException {
@@ -90,6 +97,15 @@ public class DataDaoImpl implements DataDao {
         int val = -1;
         taosUtils.get(0).executeUpdateWithReconnect(sql.toString());
         return taosUtils.get(0).executeUpdateWithReconnect("use " + database);
+    }
+
+    @Override
+    public int createMertic(String sqlSuffix, String mertricname) throws SQLException {
+        StringBuffer sql = new StringBuffer("create table  ");
+        sql.append(mertricname);
+        sql.append(sqlSuffix);
+        sql.append(" tags(tableName binary(32))");
+        return taosUtils.get(Integer.parseInt(Thread.currentThread().getName())).executeUpdateWithReconnect(sql.toString());
     }
 
   /*  @Override
