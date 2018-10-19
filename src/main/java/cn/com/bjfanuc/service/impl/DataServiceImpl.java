@@ -25,12 +25,14 @@ public class DataServiceImpl implements DataService {
 
     public int createMetricAndCreateTable(String tableName, String subCmd) throws DataErrException {
         String sqlSuffix = tableInfoDao.getSqlSuffix(subCmd);
-        if (sqlSuffix == null)
+        if (sqlSuffix == null){
             throw new DataErrException("invalid subCmd " + subCmd);
+        }
         int val = -1;
         try {
-            dataDao.createMertic(sqlSuffix, subCmd);
-            val = dataDao.createTableUsingTags(tableName, subCmd);
+            val = dataDao.createMertic(sqlSuffix, subCmd);
+            logger.info("create metric return " + val);
+            val = createTable(tableName, subCmd);
         } catch (SQLException e) {
             logger.error(e.getMessage() + " return: " + e.getErrorCode());
         }
@@ -41,10 +43,16 @@ public class DataServiceImpl implements DataService {
         int val = -1;
 
         try {
-            createTable(subCmd, tableName);//这里改过了，不应该建表成功才插入，这样其中一个线程建表以后其他两个线程建表不成功就不存了
+          val =   createTable(subCmd, tableName);//这里改过了，不应该建表成功才插入，这样其中一个线程建表以后其他两个线程建表不成功就不存了
+
+
             val = dataDao.saveData(jsonData, tableName);
+            logger.info("save data return " + val);
         } catch (SQLException e) {
-            logger.error(e.getMessage());
+
+
+            logger.error("create table and save data: " + e.getMessage() + " return: " + e.getErrorCode());
+
 
         }
 
@@ -59,14 +67,15 @@ public class DataServiceImpl implements DataService {
     public int createTable(String subCmd, String tableName) throws SQLException, DataErrException {
         int val = -1;
         try {
-            dataDao.createTableUsingTags(subCmd, tableName);
-
+            val = dataDao.createTableUsingTags(subCmd, tableName);
+            logger.info("create table return " + val);
         } catch (SQLException e) {
             if (e.getErrorCode() == ReturnValue.TABLE_NOT_EXIST) {
+                logger.info("invalid metric " + subCmd + ", create it");
                 val = createMetricAndCreateTable(tableName, subCmd);
 
             } else {
-                logger.error(e.getMessage() + " return: " + e.getErrorCode());
+                logger.error("create table: " + e.getMessage() + " return: " + e.getErrorCode());
             }
         }
 
@@ -83,20 +92,25 @@ public class DataServiceImpl implements DataService {
             String subCmd = jsonObject.getString("SUBCMD");
             String tableName = data.getString("FANUC_CNC".equals(subCmd) ? "CNC_ID" : "DEV_ID");
             if (tableName == null)
-                throw new DataErrException("invalid SubCmd");
+                throw new DataErrException("invalid SubCmd " + subCmd);
             try {
 
                 val = dataDao.saveData(data, tableName);
-
+                if (val == 0){
+                    logger.error("data cannot be save :\n" + jsonObject);
+                }
             } catch (SQLException e) {
                 if (e.getErrorCode() == ReturnValue.TABLE_NOT_EXIST) {
+                logger.info("invalid table " + tableName + ",creating it.");
                     val = createTableAndSaveData(data, tableName, subCmd);
-
+                } else {
+                    logger.error("save failed ." + e.getMessage() + " return: " + e.getErrorCode());
                 }
 
             }
         } catch (DataErrException e) {
             logger.error("Data error: " + e.getMessage());
+            logger.error("json: " + jsonObject);
         } catch (NullPointerException e) {
             logger.error("Data error: property 'DATA' is null");
         }
