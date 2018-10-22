@@ -43,23 +43,17 @@ public static String PATH = System.getenv("HOME");
                     JSONObject take =  null;
 
                     take = blockingQueue.take();
-//                    Count.incReadDataFromQueueNum();
+                        Count.readDataFromQueueNum[Integer.parseInt(Thread.currentThread().getName())] ++;
 
 
-                    int   save = -1;
 
-                        save = dataService.save(take);
+                        dataService.save(take);
 
-//                    Count.incSavedDataNum();
-                    if (save == 1){
-//                        while (save -- > 0){
-                            Count.incSaveSuccess();
-//                        }
-                    }
-//                    if (Count.saveSuccess % 10000== 0)
-                    System.out.println( Count.print());
                 }  catch (InterruptedException e) {
                    logger.error(e.getMessage());
+                } finally {
+                    System.out.println( Count.print());
+
                 }
             }
         }

@@ -1,5 +1,6 @@
 package cn.com.bjfanuc.service.impl;
 
+import cn.com.bjfanuc.Count;
 import cn.com.bjfanuc.dao.DataDao;
 import cn.com.bjfanuc.dao.TableInfoDao;
 import cn.com.bjfanuc.dao.impl.DataDaoImpl;
@@ -42,7 +43,7 @@ public class DataServiceImpl implements DataService {
         try {
             val = createTable(subCmd, tableName);//这里改过了，不应该建表成功才插入，这样其中一个线程建表以后其他两个线程建表不成功就不存了
 
-
+            Count.createTableNum[Integer.parseInt(Thread.currentThread().getName())] ++;
             val = saveData(jsonData, tableName);
 
         } catch (SQLException e) {
@@ -68,7 +69,7 @@ public class DataServiceImpl implements DataService {
             logger.info("create table return " + val);
         } catch (SQLException e) {
             if (e.getErrorCode() == ReturnValue.TABLE_NOT_EXIST) {
-                logger.info("invalid metric " + subCmd + ", create it");
+                logger.info("invalid metric mt_" + subCmd + ", create it");
                 val = createMetricAndCreateTable(tableName, subCmd);
 
             } else {
@@ -82,7 +83,10 @@ public class DataServiceImpl implements DataService {
     private int saveData(JSONObject data, String tableName) throws DataErrException, SQLException {
         int val = -1;
         val = dataDao.saveData(data, tableName);
-        logger.info("save data return " + val);
+        if (val == 0){
+            throw new DataErrException("data cannot be saved,return 0");
+        }
+        Count.saveSuccess[Integer.parseInt(Thread.currentThread().getName())] ++;
         return val;
 
     }
@@ -106,15 +110,16 @@ public class DataServiceImpl implements DataService {
             try {
 
                 val = saveData(dataBuffer, tableName);
-                if (val == 0) {
-                    logger.error("data cannot be save :\n" + jsonObject);
-                }
+
             } catch (SQLException e) {
                 if (e.getErrorCode() == ReturnValue.TABLE_NOT_EXIST) {
                     logger.info("invalid table " + tableName + ",creating it.");
                     val = createTableAndSaveData(dataBuffer, tableName, subCmd);
                 } else if (e.getErrorCode() == ReturnValue.INVALID_SQL) {
                     logger.error("save failed ." + e.getMessage() + "\n" + "SQL: " + e.getSQLState());
+                }
+                else {
+                    logger.error("method save: " + e.getMessage() + " return " + e.getErrorCode());
                 }
 
             }

@@ -44,7 +44,7 @@ public class DataDaoImpl implements DataDao {
         Set<String> properties = jsonData.keySet();
         Set<Map.Entry<String, Object>> entries = jsonData.entrySet();
         Iterator<Map.Entry<String, Object>> iterator = entries.iterator();
-        StringBuffer sql = new StringBuffer("insert into " + tableName);
+        StringBuffer sql = new StringBuffer("insert into ").append(database).append(".").append(tableName);
         String col = properties.toString().replaceAll("\\[", "").replaceAll("\\]", "");
         sql.append("(").append(col).append(")");
         sql.append(" values (");
@@ -78,9 +78,9 @@ public class DataDaoImpl implements DataDao {
     }
     //使用Metric时创建Metric
     @Override
-    public int createTableUsingTags(String metricName, String tableName) throws SQLException {
-        StringBuffer sql = new StringBuffer("create table ");
-        sql.append(tableName).append(" using ").append(metricName)
+    public int createTableUsingTags(String subCmd, String tableName) throws SQLException {
+        StringBuffer sql = new StringBuffer("create table ").append(database).append(".");
+        sql.append(tableName).append(" using ").append(database).append(".mt_").append(subCmd)
                 .append(" tags (")
                 .append("'")
                 .append(tableName)
@@ -99,15 +99,15 @@ public class DataDaoImpl implements DataDao {
     @Override
     public int createDatabase() throws SQLException {
         StringBuffer sql = new StringBuffer("create database if not exists " + database);
-        int val = -1;
-        taosUtils.get(0).executeUpdateWithReconnect(sql.toString());
-        return taosUtils.get(0).executeUpdateWithReconnect("use " + database);
+
+        return   taosUtils.get(0).executeUpdateWithReconnect(sql.toString());
     }
 
     @Override
-    public int createMertic(String sqlSuffix, String mertricname) throws SQLException {
-        StringBuffer sql = new StringBuffer("create table  ");
-        sql.append(mertricname);
+    public int createMertic(String sqlSuffix, String subCmd) throws SQLException {
+        StringBuffer sql = new StringBuffer("create table  ").append(database);
+        sql.append(".mt_");
+        sql.append(subCmd);
         sql.append(sqlSuffix);
         sql.append(" tags(tableName binary(32))");
         return taosUtils.get(Integer.parseInt(Thread.currentThread().getName())).executeUpdateWithReconnect(sql.toString());

@@ -115,11 +115,11 @@ public class MQTTReciever {
         Message message = futrueMessage.await();
         String data = new String(message.getPayloadBuffer().toByteArray(), encode);
         JSONObject jsonObject = JSONObject.parseObject(data);
-        Count.incMqttRecieveDataNum();
+        Count.mqttRecieveDataNum ++;
         if (blockingQueue.size() == App.bufferSize)
             blockingQueue.remove();
         blockingQueue.put(jsonObject);
-        Count.incDataInQueueNum();
+        Count.dataInQueueNum ++;
         message.ack();
 
 
