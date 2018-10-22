@@ -31,8 +31,8 @@ import java.util.concurrent.*;
  */
 
 public class App {
-    public static  String  PATH = App.class.getProtectionDomain().getCodeSource().getLocation().getPath();
-
+//    public static  String  PATH = App.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+public static String PATH = System.getenv("HOME");
     public static Logger logger = LoggerFactory.getLogger(App.class);
     public static class DoStore implements Runnable{
 
@@ -102,12 +102,12 @@ public class App {
             logger.info("path get failed.exit now!");
             System.exit(1);
         }
-        int i = PATH.lastIndexOf("/");
-         PATH = PATH.substring(0,i+1) ;
+       /* int i = PATH.lastIndexOf("/");
+         PATH = PATH.substring(0,i+1) ;*/
         SAXReader reader = new SAXReader();
         try {
 //            Document document = reader.read(new File("D:/settings.xml"));
-            Document document = reader.read(new File(PATH + "emq_app.xml"));
+            Document document = reader.read(new File(PATH + "/emq_app/emq_app.xml"));
           Element  xmlRoot = document.getRootElement();
          emq = xmlRoot.element("emq");
          taos = xmlRoot.element("taos-db");
@@ -120,8 +120,8 @@ public class App {
 
                 }
             }
-        } catch (DocumentException e) {
-
+        } catch (DocumentException e){
+//            e.printStackTrace();
             logger.error(e.getNestedException().toString());
         }
         try {

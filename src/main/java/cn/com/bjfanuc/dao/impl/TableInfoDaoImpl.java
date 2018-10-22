@@ -15,6 +15,7 @@ public class TableInfoDaoImpl implements TableInfoDao {
 
     private Map<String,String> subcmdMap = new HashMap<>();
     private List<RedisUtil> redisUtils = new ArrayList<>();
+
     private int count = 1;
     {
         count = App.taosHosts.size();
@@ -24,6 +25,7 @@ public class TableInfoDaoImpl implements TableInfoDao {
             redisUtils.add(new RedisUtil());
         }
 //       if (jedis.isConnected())
+
 
     }
 

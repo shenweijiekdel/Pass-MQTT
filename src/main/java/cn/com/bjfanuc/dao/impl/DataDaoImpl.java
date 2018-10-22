@@ -62,14 +62,19 @@ public class DataDaoImpl implements DataDao {
 
         }
         sql.append(")");
-        int val = taosUtils.get(Integer.parseInt(Thread.currentThread().getName())).executeUpdateWithReconnect(sql.toString());
-        if (val == ReturnValue.INVALID_SQL) {
-            throw new DataErrException("invalid SQL");
+        try {
+
+         return taosUtils.get(Integer.parseInt(Thread.currentThread().getName())).executeUpdateWithReconnect(sql.toString());
+        }catch (SQLException e){
+            if (e.getErrorCode() == ReturnValue.INVALID_SQL){
+                logger.error("invalid sql: " + sql);
+            } else
+                throw e;
         }
     /*   else  if (val != 1 && val != ReturnValue.TABLE_NOT_EXIST)
             logger.error("insert failed SQL: return " + val + "\nSQL:" + sql); //可能没有这种可能，因为都通过异常来处理了
 */
-        return val;
+        return -1;
     }
     //使用Metric时创建Metric
     @Override
