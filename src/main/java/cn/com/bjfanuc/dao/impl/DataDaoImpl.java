@@ -44,7 +44,7 @@ public class DataDaoImpl implements DataDao {
         Set<String> properties = jsonData.keySet();
         Set<Map.Entry<String, Object>> entries = jsonData.entrySet();
         Iterator<Map.Entry<String, Object>> iterator = entries.iterator();
-        StringBuffer sql = new StringBuffer("insert into ").append(database).append(".").append(tableName);
+        StringBuffer sql = new StringBuffer("import into ").append(database).append(".").append(tableName);
         String col = properties.toString().replaceAll("\\[", "").replaceAll("\\]", "");
         sql.append("(").append(col).append(")");
         sql.append(" values (");
@@ -67,20 +67,20 @@ public class DataDaoImpl implements DataDao {
          return taosUtils.get(Integer.parseInt(Thread.currentThread().getName())).executeUpdateWithReconnect(sql.toString());
         }catch (SQLException e){
             if (e.getErrorCode() == ReturnValue.INVALID_SQL){
-                logger.error("invalid sql: " + sql);
+//                logger.error("invalid sql: " + sql);
+                throw new DataErrException("data error: invalid data for this subCmd");
             } else
                 throw e;
         }
     /*   else  if (val != 1 && val != ReturnValue.TABLE_NOT_EXIST)
             logger.error("insert failed SQL: return " + val + "\nSQL:" + sql); //可能没有这种可能，因为都通过异常来处理了
 */
-        return -1;
     }
     //使用Metric时创建Metric
     @Override
     public int createTableUsingTags(String subCmd, String tableName) throws SQLException {
         StringBuffer sql = new StringBuffer("create table ").append(database).append(".");
-        try {
+
 
         sql.append(tableName).append(" using ").append(database).append(".mt_").append(subCmd)
                 .append(" tags (")
@@ -88,47 +88,26 @@ public class DataDaoImpl implements DataDao {
                 .append(tableName)
                 .append("')");
         return taosUtils.get(Integer.parseInt(Thread.currentThread().getName())).executeUpdateWithReconnect(sql.toString());
-        }catch (SQLException e){
-            if (e.getErrorCode() == ReturnValue.INVALID_SQL){
-                logger.error("invalid sql: " + sql);
-            } else
-                throw e;
-        }
-        return -1;
+
     }
 
     @Override
     public int createDatabase() throws SQLException {
             StringBuffer sql = new StringBuffer("create database if not exists " + database);
-        try {
+          return taosUtils.get(0).executeUpdateWithReconnect(sql.toString());
 
-            return taosUtils.get(0).executeUpdateWithReconnect(sql.toString());
-        }catch (SQLException e){
-            if (e.getErrorCode() == ReturnValue.INVALID_SQL){
-                logger.error("invalid sql: " + sql);
-            } else
-                throw e;
-        }
-        return -1;
     }
 
     @Override
     public int createMertic(String sqlSuffix, String subCmd) throws SQLException {
         StringBuffer sql = new StringBuffer("create table  ").append(database);
-        try {
 
         sql.append(".mt_");
         sql.append(subCmd);
         sql.append(sqlSuffix);
         sql.append(" tags(tableName binary(32))");
         return taosUtils.get(Integer.parseInt(Thread.currentThread().getName())).executeUpdateWithReconnect(sql.toString());
-        }catch (SQLException e){
-            if (e.getErrorCode() == ReturnValue.INVALID_SQL){
-                logger.error("invalid sql: " + sql);
-            } else
-                throw e;
-        }
-        return -1;
+
     }
 
   /*  @Override

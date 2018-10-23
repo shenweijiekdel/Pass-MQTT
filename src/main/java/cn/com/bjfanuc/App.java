@@ -1,6 +1,7 @@
 package cn.com.bjfanuc;
 
 
+import cn.com.bjfanuc.exception.DataErrException;
 import cn.com.bjfanuc.utils.ReturnValue;
 import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.JSONObject;
@@ -38,20 +39,27 @@ public static String HOME = System.getenv("HOME");
 
         @Override
         public void run() {
-            while (true){
-                try {
+
                     JSONObject take =  null;
+            while (true){
+
+                try {
 
                     take = blockingQueue.take();
                         Count.readDataFromQueueNum[Integer.parseInt(Thread.currentThread().getName())] ++;
 
 
+                    int val = dataService.save(take);
 
-                        dataService.save(take);
-
+                        logger.info("save data return " + val);
+                } catch (DataErrException e) {
+                    logger.error("Data error: " + e.getMessage() + "\n.json: " + take);
                 }  catch (InterruptedException e) {
                    logger.error(e.getMessage());
-                } finally {
+                }  catch (Exception e) {
+                logger.error("other save error: ", e);
+            }
+                finally {
                     System.out.println( Count.print());
 
                 }

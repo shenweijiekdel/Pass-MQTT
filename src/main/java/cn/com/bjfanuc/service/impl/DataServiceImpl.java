@@ -29,10 +29,10 @@ public class DataServiceImpl implements DataService {
         int val = -1;
         try {
             val = dataDao.createMertic(sqlSuffix, subCmd);
-            logger.info("create metric return " + val);
+            logger.info("metric mt_" + subCmd + " created");
             val = createTable(subCmd, tableName);
         } catch (SQLException e) {
-            logger.error("error return: " + e.getErrorCode(),e);
+            logger.error("create metric mt_" + subCmd + "error: return: " + e.getErrorCode(), e);
         }
         return val;
     }
@@ -40,16 +40,16 @@ public class DataServiceImpl implements DataService {
     public int createTableAndSaveData(JSONObject jsonData, String tableName, String subCmd) throws DataErrException {
         int val = -1;
 
+        val = createTable(subCmd, tableName);
         try {
-            val = createTable(subCmd, tableName);//这里改过了，不应该建表成功才插入，这样其中一个线程建表以后其他两个线程建表不成功就不存了
 
-            Count.createTableNum[Integer.parseInt(Thread.currentThread().getName())] ++;
+            Count.createTableNum[Integer.parseInt(Thread.currentThread().getName())]++;
             val = saveData(jsonData, tableName);
 
         } catch (SQLException e) {
 
 
-            logger.error("error return: " + e.getErrorCode(),e);
+            logger.error("save data error return: " + e.getErrorCode(), e);
 
 
         }
@@ -62,18 +62,18 @@ public class DataServiceImpl implements DataService {
 
     }
 
-    public int createTable(String subCmd, String tableName) throws SQLException, DataErrException {
+    public int createTable(String subCmd, String tableName) throws DataErrException {
         int val = -1;
         try {
             val = dataDao.createTableUsingTags(subCmd, tableName);
-            logger.info("create table return " + val);
+            logger.info("table " + tableName + " created ");
         } catch (SQLException e) {
             if (e.getErrorCode() == ReturnValue.TABLE_NOT_EXIST) {
-                logger.info("invalid metric mt_" + subCmd + ", create it");
+                logger.info("create metric mt_" + subCmd);
                 val = createMetricAndCreateTable(tableName, subCmd);
 
             } else {
-                logger.error("create table error: return: " + e.getErrorCode(),e);
+                logger.error("create table " + tableName + " error. return: " + e.getErrorCode(), e);
             }
         }
 
@@ -81,51 +81,49 @@ public class DataServiceImpl implements DataService {
     }
 
     private int saveData(JSONObject data, String tableName) throws DataErrException, SQLException {
-        int val = -1;
-        val = dataDao.saveData(data, tableName);
-        if (val == 0){
-            throw new DataErrException("data cannot be saved,return 0");
+
+        int val = dataDao.saveData(data, tableName);
+
+        if (val > 0) {
+            Count.saveSuccess[Integer.parseInt(Thread.currentThread().getName())]++;
         }
-        Count.saveSuccess[Integer.parseInt(Thread.currentThread().getName())] ++;
+
         return val;
 
     }
 
     @Override
-    public int save(JSONObject jsonObject) {
+    public int save(JSONObject jsonObject) throws DataErrException{
 
         int val = -1;
-
-        String subCmd = jsonObject.getString("SUBCMD");
-        JSONObject dataBuffer = jsonObject.getJSONObject("DATA");
-            String tableName = dataBuffer.getString("FANUC_CNC".equals(subCmd) ? "CNC_ID" : "DEV_ID");
+        String subCmd = null;
+        JSONObject dataBuffer = null;
+        String tableName = null;
         try {
+            subCmd = jsonObject.getString("SUBCMD");
+            dataBuffer = jsonObject.getJSONObject("DATA");
+            tableName = dataBuffer.getString("FANUC_CNC".equals(subCmd) ? "CNC_ID" : "DEV_ID");
             if (tableName == null)
                 throw new DataErrException("invalid tableName ");
             if (subCmd == null) {
 
                 throw new DataErrException("invalid SubCmd " + subCmd);
             }
-            try {
 
-                val = saveData(dataBuffer, tableName);
 
-            } catch (SQLException e) {
-                if (e.getErrorCode() == ReturnValue.TABLE_NOT_EXIST) {
-                    logger.info("invalid table " + tableName + ",creating it.");
-                    val = createTableAndSaveData(dataBuffer, tableName, subCmd);
-                }
-                else {
-                    logger.error("save failed: return " + e.getErrorCode(),e);
-                }
+            val = saveData(dataBuffer, tableName);
 
+        } catch (SQLException e) {
+            if (e.getErrorCode() == ReturnValue.TABLE_NOT_EXIST) {
+                logger.info("create table " + tableName);
+                val = createTableAndSaveData(dataBuffer, tableName, subCmd);
+            } else {
+                logger.error("save failed: return " + e.getErrorCode(), e);
             }
-        } catch (DataErrException e) {
-            logger.error("Data error: " + e.getMessage() + "\n.json: " + jsonObject ,e);
+
+
         } catch (NullPointerException e) {
-            logger.error("Data error: property 'DATA' is null" + "\n",e);
-        } catch (Exception e){
-            logger.error("other error: ",e);
+            logger.error("Data error: Json or property 'DATA' is null" + "\n", e);
         }
 
         return val;
