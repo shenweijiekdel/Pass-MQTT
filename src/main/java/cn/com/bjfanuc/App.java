@@ -42,7 +42,7 @@ public static String HOME = System.getenv("HOME");
 
                     JSONObject take =  null;
             while (true){
-
+                StringBuffer log = new StringBuffer();
                 try {
 
                     take = blockingQueue.take();
@@ -50,8 +50,8 @@ public static String HOME = System.getenv("HOME");
 
 
                     int val = dataService.save(take);
-
-                        logger.info("save data return " + val);
+                    log.append("save data return ").append(val);
+                        logger.info(log.toString());
                 } catch (DataErrException e) {
                     logger.error("Data error: " + e.getMessage() + "\n.json: " + take);
                 }  catch (InterruptedException e) {
@@ -101,12 +101,12 @@ public static String HOME = System.getenv("HOME");
     public static List<String> taosHosts = new ArrayList<>();
     static {
         if (HOME == null){
-            logger.info("please set environment variable HOME.");
+            logger.error("please set environment variable HOME.");
             System.exit(1);
 
         }
         if (PATH == null){
-            logger.info("cannot get current path,exit now");
+            logger.error("cannot get current path,exit now");
             System.exit(1);
         }
         PATH = PATH.replaceAll(".jar",".xml");

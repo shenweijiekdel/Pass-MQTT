@@ -62,16 +62,24 @@ public class DataDaoImpl implements DataDao {
 
         }
         sql.append(")");
+        int val = -1;
         try {
 
-         return taosUtils.get(Integer.parseInt(Thread.currentThread().getName())).executeUpdateWithReconnect(sql.toString());
+         val =  taosUtils.get(Integer.parseInt(Thread.currentThread().getName())).executeUpdateWithReconnect(sql.toString());
         }catch (SQLException e){
             if (e.getErrorCode() == ReturnValue.INVALID_SQL){
 //                logger.error("invalid sql: " + sql);
                 throw new DataErrException("data error: invalid data for this subCmd");
             } else
                 throw e;
+        }finally {
+            properties = null;
+            entries = null;
+            iterator = null;
+            sql = null;
+            col = null;
         }
+            return val;
     /*   else  if (val != 1 && val != ReturnValue.TABLE_NOT_EXIST)
             logger.error("insert failed SQL: return " + val + "\nSQL:" + sql); //可能没有这种可能，因为都通过异常来处理了
 */
@@ -87,14 +95,18 @@ public class DataDaoImpl implements DataDao {
                 .append("'")
                 .append(tableName)
                 .append("')");
-        return taosUtils.get(Integer.parseInt(Thread.currentThread().getName())).executeUpdateWithReconnect(sql.toString());
+        int val =  taosUtils.get(Integer.parseInt(Thread.currentThread().getName())).executeUpdateWithReconnect(sql.toString());
+        sql = null;
+        return val;
 
     }
 
     @Override
     public int createDatabase() throws SQLException {
             StringBuffer sql = new StringBuffer("create database if not exists " + database);
-          return taosUtils.get(0).executeUpdateWithReconnect(sql.toString());
+          int val =  taosUtils.get(0).executeUpdateWithReconnect(sql.toString());
+          sql = null;
+          return val;
 
     }
 
@@ -106,7 +118,9 @@ public class DataDaoImpl implements DataDao {
         sql.append(subCmd);
         sql.append(sqlSuffix);
         sql.append(" tags(tableName binary(32))");
-        return taosUtils.get(Integer.parseInt(Thread.currentThread().getName())).executeUpdateWithReconnect(sql.toString());
+        int val =  taosUtils.get(Integer.parseInt(Thread.currentThread().getName())).executeUpdateWithReconnect(sql.toString());
+        sql = null;
+        return val;
 
     }
 

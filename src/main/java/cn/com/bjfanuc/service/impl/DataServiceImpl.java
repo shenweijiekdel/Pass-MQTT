@@ -29,7 +29,11 @@ public class DataServiceImpl implements DataService {
         int val = -1;
         try {
             val = dataDao.createMertic(sqlSuffix, subCmd);
-            logger.info("metric mt_" + subCmd + " created");
+            StringBuffer log = new StringBuffer("metric mt_");
+            log.append(subCmd)
+                    .append("created");
+            logger.info(log.toString());
+            log = null;
             val = createTable(subCmd, tableName);
         } catch (SQLException e) {
             logger.error("create metric mt_" + subCmd + "error: return: " + e.getErrorCode(), e);
@@ -101,14 +105,15 @@ public class DataServiceImpl implements DataService {
         String tableName = null;
         try {
             subCmd = jsonObject.getString("SUBCMD");
+            if (subCmd == null) {
+
+                throw new DataErrException(new StringBuffer("invalid SubCmd ").append( subCmd).toString());
+            }
             dataBuffer = jsonObject.getJSONObject("DATA");
             tableName = dataBuffer.getString("FANUC_CNC".equals(subCmd) ? "CNC_ID" : "DEV_ID");
             if (tableName == null)
-                throw new DataErrException("invalid tableName ");
-            if (subCmd == null) {
+                throw new DataErrException("invalid ID " + tableName);
 
-                throw new DataErrException("invalid SubCmd " + subCmd);
-            }
 
 
             val = saveData(dataBuffer, tableName);
@@ -124,6 +129,10 @@ public class DataServiceImpl implements DataService {
 
         } catch (NullPointerException e) {
             logger.error("Data error: Json or property 'DATA' is null" + "\n", e);
+        } finally {
+             subCmd = null;
+             dataBuffer = null;
+             tableName = null;
         }
 
         return val;
