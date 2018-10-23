@@ -80,37 +80,55 @@ public class DataDaoImpl implements DataDao {
     @Override
     public int createTableUsingTags(String subCmd, String tableName) throws SQLException {
         StringBuffer sql = new StringBuffer("create table ").append(database).append(".");
+        try {
+
         sql.append(tableName).append(" using ").append(database).append(".mt_").append(subCmd)
                 .append(" tags (")
                 .append("'")
                 .append(tableName)
                 .append("')");
         return taosUtils.get(Integer.parseInt(Thread.currentThread().getName())).executeUpdateWithReconnect(sql.toString());
-
+        }catch (SQLException e){
+            if (e.getErrorCode() == ReturnValue.INVALID_SQL){
+                logger.error("invalid sql: " + sql);
+            } else
+                throw e;
+        }
+        return -1;
     }
-   /* public int createTable(String sqlSuffix, String tableName) throws SQLException {
-
-        StringBuffer sql = new StringBuffer("create table  ");
-        sql.append(sqlSuffix);
-
-        return taosUtils.get(Integer.parseInt(Thread.currentThread().getName())).executeUpdateWithReconnect(sql.toString());
-    }*/
 
     @Override
     public int createDatabase() throws SQLException {
-        StringBuffer sql = new StringBuffer("create database if not exists " + database);
+            StringBuffer sql = new StringBuffer("create database if not exists " + database);
+        try {
 
-        return   taosUtils.get(0).executeUpdateWithReconnect(sql.toString());
+            return taosUtils.get(0).executeUpdateWithReconnect(sql.toString());
+        }catch (SQLException e){
+            if (e.getErrorCode() == ReturnValue.INVALID_SQL){
+                logger.error("invalid sql: " + sql);
+            } else
+                throw e;
+        }
+        return -1;
     }
 
     @Override
     public int createMertic(String sqlSuffix, String subCmd) throws SQLException {
         StringBuffer sql = new StringBuffer("create table  ").append(database);
+        try {
+
         sql.append(".mt_");
         sql.append(subCmd);
         sql.append(sqlSuffix);
         sql.append(" tags(tableName binary(32))");
         return taosUtils.get(Integer.parseInt(Thread.currentThread().getName())).executeUpdateWithReconnect(sql.toString());
+        }catch (SQLException e){
+            if (e.getErrorCode() == ReturnValue.INVALID_SQL){
+                logger.error("invalid sql: " + sql);
+            } else
+                throw e;
+        }
+        return -1;
     }
 
   /*  @Override

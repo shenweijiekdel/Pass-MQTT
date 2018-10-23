@@ -51,7 +51,7 @@ public class RedisUtil {
             return ;
 
             }catch (Exception e){
-                System.err.println("Redis: connect failed: "+ e.getMessage() + " retry " + (currentRetryTime ++) + " time(s)" + " " );
+               logger.error("Redis: connect failed: "+ e.getMessage() + " retry " + (currentRetryTime ++) + " time(s)" + " " );
                 try {
                     Thread.sleep(retryDelay);
                 } catch (InterruptedException e1) {

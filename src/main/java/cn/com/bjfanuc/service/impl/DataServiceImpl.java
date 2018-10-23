@@ -32,7 +32,7 @@ public class DataServiceImpl implements DataService {
             logger.info("create metric return " + val);
             val = createTable(subCmd, tableName);
         } catch (SQLException e) {
-            logger.error(e.getMessage() + " return: " + e.getErrorCode());
+            logger.error("error return: " + e.getErrorCode(),e);
         }
         return val;
     }
@@ -49,7 +49,7 @@ public class DataServiceImpl implements DataService {
         } catch (SQLException e) {
 
 
-            logger.error("create table and save data: ls" + e.getMessage() + " return: " + e.getErrorCode());
+            logger.error("error return: " + e.getErrorCode(),e);
 
 
         }
@@ -73,7 +73,7 @@ public class DataServiceImpl implements DataService {
                 val = createMetricAndCreateTable(tableName, subCmd);
 
             } else {
-                logger.error("create table: " + e.getMessage() + " return: " + e.getErrorCode());
+                logger.error("create table error: return: " + e.getErrorCode(),e);
             }
         }
 
@@ -98,8 +98,7 @@ public class DataServiceImpl implements DataService {
 
         String subCmd = jsonObject.getString("SUBCMD");
         JSONObject dataBuffer = jsonObject.getJSONObject("DATA");
-        String tableName = dataBuffer.getString("CNC_ID");   //暂时全是CNC_ID
-//            String tableName = data.getString("FANUC_CNC".equals(subCmd) ? "CNC_ID" : "DEV_ID");
+            String tableName = dataBuffer.getString("FANUC_CNC".equals(subCmd) ? "CNC_ID" : "DEV_ID");
         try {
             if (tableName == null)
                 throw new DataErrException("invalid tableName ");
@@ -115,18 +114,18 @@ public class DataServiceImpl implements DataService {
                 if (e.getErrorCode() == ReturnValue.TABLE_NOT_EXIST) {
                     logger.info("invalid table " + tableName + ",creating it.");
                     val = createTableAndSaveData(dataBuffer, tableName, subCmd);
-                } else if (e.getErrorCode() == ReturnValue.INVALID_SQL) {
-                    logger.error("save failed ." + e.getMessage() + "\n" + "SQL: " + e.getSQLState());
                 }
                 else {
-                    logger.error("method save: " + e.getMessage() + " return " + e.getErrorCode());
+                    logger.error("save failed: return " + e.getErrorCode(),e);
                 }
 
             }
         } catch (DataErrException e) {
-            logger.error("Data error: " + e.getMessage() + "\n.json: " + jsonObject);
+            logger.error("Data error: " + e.getMessage() + "\n.json: " + jsonObject ,e);
         } catch (NullPointerException e) {
-            logger.error("Data error: property 'DATA' is null");
+            logger.error("Data error: property 'DATA' is null" + "\n",e);
+        } catch (Exception e){
+            logger.error("other error: ",e);
         }
 
         return val;

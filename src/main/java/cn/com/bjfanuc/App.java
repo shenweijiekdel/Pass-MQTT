@@ -31,8 +31,8 @@ import java.util.concurrent.*;
  */
 
 public class App {
-//    public static  String  PATH = App.class.getProtectionDomain().getCodeSource().getLocation().getPath();
-public static String PATH = System.getenv("HOME");
+    public static  String  PATH = App.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+public static String HOME = System.getenv("HOME");
     public static Logger logger = LoggerFactory.getLogger(App.class);
     public static class DoStore implements Runnable{
 
@@ -78,7 +78,7 @@ public static String PATH = System.getenv("HOME");
                    logger.error("data error: NULL");
 
                 }catch (Exception e) {
-                    logger.error(e.toString());
+                    logger.error("other error: " + e);
                 }
 
 
@@ -92,16 +92,22 @@ public static String PATH = System.getenv("HOME");
     public static Element redis;
     public static List<String> taosHosts = new ArrayList<>();
     static {
+        if (HOME == null){
+            logger.info("please set environment variable HOME.");
+            System.exit(1);
+
+        }
         if (PATH == null){
-            logger.info("path get failed.exit now!");
+            logger.info("cannot get current path,exit now");
             System.exit(1);
         }
+        PATH = PATH.replaceAll(".jar",".xml");
        /* int i = PATH.lastIndexOf("/");
          PATH = PATH.substring(0,i+1) ;*/
         SAXReader reader = new SAXReader();
         try {
 //            Document document = reader.read(new File("D:/settings.xml"));
-            Document document = reader.read(new File(PATH + "/emq_app/emq_app.xml"));
+            Document document = reader.read(new File(PATH));
           Element  xmlRoot = document.getRootElement();
          emq = xmlRoot.element("emq");
          taos = xmlRoot.element("taos-db");

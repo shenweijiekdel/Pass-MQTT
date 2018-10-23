@@ -67,7 +67,7 @@ public class TaosUtil {
                 try {
                     Thread.sleep(retryDelay);
                 } catch (InterruptedException e1) {
-                    e1.printStackTrace();
+                    logger.error("other error: " ,e1);
                 }
             }
             }
@@ -93,7 +93,7 @@ public class TaosUtil {
                 try {
                         Thread.sleep(retryDelay);
                     } catch (InterruptedException e2) {
-                    logger.error(e2.toString());
+                    logger.error("other error: " ,e2);
                     }
 
 
@@ -114,7 +114,7 @@ public class TaosUtil {
                 try {
                     Thread.sleep(retryDelay);
                 } catch (InterruptedException e) {
-                   logger.error(e.toString());
+                    logger.error("other error: " ,e);
                 }
             }
             while (true) {
@@ -128,7 +128,7 @@ public class TaosUtil {
                             logger.error("TaosDB: execute failed，retry " + (currentRetyTime ++) + " time(s)");
                             Thread.sleep(retryDelay);
                         } catch (InterruptedException e1) {
-                            logger.error(e1.toString());
+                            logger.error("other error: " ,e1);
                         }
                     } else {
                         throw e;
@@ -182,7 +182,7 @@ public class TaosUtil {
             if (this.conn != null)
                 this.conn.close();
         } catch (SQLException e) {
-           logger.error(e.getMessage());
+            logger.error("close failed: " ,e);
             conn = null;
         }
     }
