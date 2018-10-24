@@ -8,13 +8,20 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * 单例工厂
+ */
 public class SingletonFactory {
-    private static  Map<String,Object> map = new ConcurrentHashMap<>();
-    private SingletonFactory(){}
+    private static Map<String, Object> map = new ConcurrentHashMap<>();
+
+    private SingletonFactory() {
+    }
+
     private static Logger logger = LoggerFactory.getLogger(SingletonFactory.class);
-    public static<T> T getBean(String name) {
+
+    public static <T> T getBean(String name) {
         Object value = map.get(name);
-            Object o = null;
+        Object o = null;
         if (value == null) {
             try {
                 Class<?> forName = Class.forName(name);
@@ -26,9 +33,9 @@ public class SingletonFactory {
             }
             map.put(name, o);
         }
-        for (Map.Entry<String,Object> entry:map.entrySet()){
+        for (Map.Entry<String, Object> entry : map.entrySet()) {
         }
-            return (T) o;
+        return (T) o;
     }
 
 
