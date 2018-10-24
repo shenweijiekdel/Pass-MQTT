@@ -43,11 +43,12 @@ public class TableInfoDaoImpl implements TableInfoDao {
      */
     @Override
     public String getSqlSuffix(String subCmd) throws DataErrException {
+        int threadIndex = Thread.currentThread().getName().charAt(0) - 48;
         if (subCmd == null)
             return null;
         if (subcmdMap.get(subCmd) == null) {
             redisUtils.get(Integer.parseInt(Thread.currentThread().getName())).get("SUBCMD_" + subCmd);
-            subcmdMap.put(subCmd, redisUtils.get(Integer.parseInt(Thread.currentThread().getName())).get("SUBCMD_" + subCmd)); //对应线程使用对应线程下的redisUtil，线程名以数字命名
+            subcmdMap.put(subCmd, redisUtils.get(threadIndex).get("SUBCMD_" + subCmd)); //对应线程使用对应线程下的redisUtil，线程名以数字命名
         }
         return subcmdMap.get(subCmd);
 

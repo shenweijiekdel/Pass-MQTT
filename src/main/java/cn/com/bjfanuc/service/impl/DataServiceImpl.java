@@ -36,11 +36,7 @@ public class DataServiceImpl implements DataService {
         int val = -1;
         try {
             val = dataDao.createMertic(sqlSuffix, subCmd);
-            StringBuffer log = new StringBuffer("metric mt_");
-            log.append(subCmd)
-                    .append("created");
-            logger.info(log.toString());
-            log = null;
+            logger.info("metric mt_" + subCmd + "created");
             val = createTable(subCmd, cncId);
         } catch (SQLException e) {
             logger.error("create metric mt_" + subCmd + "error: return: " + e.getErrorCode(), e);
@@ -59,11 +55,11 @@ public class DataServiceImpl implements DataService {
      */
     private int createTableAndSaveData(JSONObject jsonData, String cncId, String subCmd) throws DataErrException {
         int val = -1;
-
+        int threadIndex = Thread.currentThread().getName().charAt(0) - 48;
         val = createTable(subCmd, cncId);
         try {
 
-            Count.createTableNum[Integer.parseInt(Thread.currentThread().getName())]++;
+            Count.createTableNum[threadIndex]++;
             val = saveData(jsonData, cncId);
 
         } catch (SQLException e) {
@@ -118,11 +114,12 @@ public class DataServiceImpl implements DataService {
      * @throws SQLException
      */
     private int saveData(JSONObject data, String tableName) throws DataErrException, SQLException {
+        int threadIndex = Thread.currentThread().getName().charAt(0) - 48;
 
         int val = dataDao.saveData(data, tableName);
 
         if (val > 0) {
-            Count.saveSuccess[Integer.parseInt(Thread.currentThread().getName())]++;
+            Count.saveSuccess[threadIndex]++;
         }
 
         return val;
@@ -139,6 +136,7 @@ public class DataServiceImpl implements DataService {
     @Override
     public int save(JSONObject jsonObject) throws DataErrException {
 
+
         int val = -1;
         String subCmd = null;
         JSONObject dataBuffer = null;
@@ -147,7 +145,7 @@ public class DataServiceImpl implements DataService {
             subCmd = jsonObject.getString("SUBCMD");
             if (subCmd == null) {
 
-                throw new DataErrException(new StringBuffer("invalid SubCmd ").append(subCmd).toString());
+                throw new DataErrException("invalid SubCmd " + subCmd);
             }
             dataBuffer = jsonObject.getJSONObject("DATA");
             tableName = dataBuffer.getString("FANUC_CNC".equals(subCmd) ? "CNC_ID" : "DEV_ID");

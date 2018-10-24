@@ -18,6 +18,7 @@ import org.dom4j.Element;
 import org.dom4j.io.SAXReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.rmi.runtime.Log;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
@@ -34,13 +35,13 @@ public class App {
     public static String PATH = App.class.getProtectionDomain().getCodeSource().getLocation().getPath();
     public static String HOME = System.getenv("HOME");
     public static Logger logger = LoggerFactory.getLogger(App.class);
-    public static Integer bufferSize = 1024;
+    public static Integer bufferSize = 64;
     public static Element emq;
     public static Element taos;
     public static Element redis;
     public static List<String> taosHosts = new ArrayList<>();
     public static DataService dataService ;
-    public static BlockingQueue<JSONObject> blockingQueue = new ArrayBlockingQueue<>(bufferSize);  //建立缓冲区
+    public static BlockingQueue<JSONObject> blockingQueue;  //建立缓冲区
     public static MQTTReciever mqttReciever;
 
     /**
@@ -59,7 +60,7 @@ public class App {
                 try {
 
                     take = blockingQueue.take();
-                    Count.readDataFromQueueNum[Integer.parseInt(Thread.currentThread().getName())]++;
+                    Count.readDataFromQueueNum[0]++;
 
 
                     int val = dataService.save(take);
@@ -71,7 +72,7 @@ public class App {
                     logger.error(e.getMessage());
                 } catch (Exception e) {
                     logger.error("other save error: ", e);
-                } finally {
+                }finally {
                     System.out.println(Count.print());
 
                 }
@@ -139,7 +140,6 @@ public class App {
             emq = xmlRoot.element("emq");          //读取emq配置子节点
             taos = xmlRoot.element("taos-db");   //读取taos配置子节点
             redis = xmlRoot.element("redis");   //赌气redis配置子节点
-            System.out.println(taos + " " + taos.elementText("taos-db"));
             /**
              * taos配置中的Host可以是多个，根据host的数量决定线程启用数量
              */
@@ -161,6 +161,12 @@ public class App {
             logger.warn("EMQ: bufferSize invalid，use default");
         }
        dataService = SingletonFactory.getBean(DataServiceImpl.class.getName());
+        blockingQueue = new ArrayBlockingQueue<>(bufferSize * 1024);
+        if (taosHosts.size() > 9){
+            logger.error("maxmum of taos host is 9,exit now");
+            System.exit(1);
+
+        }
     }
 
 

@@ -87,7 +87,7 @@ public class MQTTReciever {
         mqtt.setUserName(user != null ? user : "");
         mqtt.setPassword(password != null ? password : "");
         mqtt.setTrafficClass(8);
-        mqtt.setSendBufferSize(1024);
+        mqtt.setSendBufferSize(64);
         mqtt.setReceiveBufferSize(1024);
         mqtt.setTracer(new MyTracer());
         connection = mqtt.futureConnection(); //使用future连接
@@ -127,7 +127,7 @@ public class MQTTReciever {
         Count.mqttRecieveDataNum++;
 
         if (blockingQueue.size() == App.bufferSize) //如果队列满了则旧数据出队，新数据再入队
-            blockingQueue.remove();
+            blockingQueue.take();
         blockingQueue.put(jsonObject);
         Count.dataInQueueNum++;
         message.ack(); //响应ACK，

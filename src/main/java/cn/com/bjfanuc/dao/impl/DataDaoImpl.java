@@ -17,6 +17,7 @@ public class DataDaoImpl implements DataDao {
     private List<TaosUtil> taosUtils = new ArrayList<>();
     private Logger logger = LoggerFactory.getLogger(DataDaoImpl.class);
     private String database = App.taos == null ? null : App.taos.elementText("database");
+    private StringBuffer[] sqlBuffer = new StringBuffer[hosts.size()]; //暂时只支持单线程
 
     /**
      * taosUtil根据taosHost个数创建，并以对应的taosHost初始化，实现多连接功能
@@ -29,6 +30,7 @@ public class DataDaoImpl implements DataDao {
         for (int i = 0; i < hosts.size(); i++) {
 
             taosUtils.add(new TaosUtil(hosts.get(i)));
+            sqlBuffer[i] = new StringBuffer();
         }
         if (database == null || "".equals(database)) {
             logger.error("database is null!");
@@ -52,48 +54,42 @@ public class DataDaoImpl implements DataDao {
      * @throws SQLException
      */
     public int saveDataWhthoutPrepare(JSONObject jsonData, String tableName) throws DataErrException, SQLException {
+        int threadIndex = Thread.currentThread().getName().charAt(0) - 48;
+
+        sqlBuffer[threadIndex].delete(0, sqlBuffer[threadIndex].length());
         Set<String> properties = jsonData.keySet();
         Set<Map.Entry<String, Object>> entries = jsonData.entrySet();
         Iterator<Map.Entry<String, Object>> iterator = entries.iterator();
-        StringBuffer sql = new StringBuffer("import into ").append(database).append(".").append(tableName);
+//        StringBuffer sql = new StringBuffer("import into ").append(database).append(".").append(tableName);
+        sqlBuffer[threadIndex].append("import into ").append(database).append(".").append(tableName);
         String col = properties.toString().replaceAll("\\[", "").replaceAll("\\]", "");
-        sql.append("(").append(col).append(")");
-        sql.append(" values (");
+        sqlBuffer[threadIndex].append("(").append(col).append(")");
+        sqlBuffer[threadIndex].append(" values (");
         int i = 0;
         while (iterator.hasNext()) {
             Map.Entry<String, Object> next = iterator.next();
             if (i == 0) {
-                sql.append("'").append(next.getValue()).append("'");
+                sqlBuffer[threadIndex].append("'").append(next.getValue()).append("'");
 
             } else {
 
-                sql.append(",'").append(next.getValue()).append("'");
+                sqlBuffer[threadIndex].append(",'").append(next.getValue()).append("'");
             }
             i++;
 
         }
-        sql.append(")");
+        sqlBuffer[threadIndex].append(")");
         int val = -1;
         try {
 
-            val = taosUtils.get(Integer.parseInt(Thread.currentThread().getName())).executeUpdateWithReconnect(sql.toString()); //对应线程使用对应线程下的taosUtil进行存储
+            val = taosUtils.get(threadIndex).executeUpdateWithReconnect(sqlBuffer[threadIndex].toString()); //对应线程使用对应线程下的taosUtil进行存储
         } catch (SQLException e) {
             if (e.getErrorCode() == ReturnValue.INVALID_SQL) {
-//                logger.error("invalid sql: " + sql);
                 throw new DataErrException("data error: invalid data for this subCmd");
             } else
                 throw e;
-        } finally {
-            properties = null;
-            entries = null;
-            iterator = null;
-            sql = null;
-            col = null;
         }
         return val;
-    /*   else  if (val != 1 && val != ReturnValue.TABLE_NOT_EXIST)
-            logger.error("insert failed SQL: return " + val + "\nSQL:" + sql); //可能没有这种可能，因为都通过异常来处理了
-*/
     }
 
     /**
@@ -106,16 +102,16 @@ public class DataDaoImpl implements DataDao {
      */
     @Override
     public int createTableUsingTags(String subCmd, String tableName) throws SQLException {
-        StringBuffer sql = new StringBuffer("create table ").append(database).append(".");
-
-
-        sql.append(tableName).append(" using ").append(database).append(".mt_").append(subCmd)
+        int threadIndex = Thread.currentThread().getName().charAt(0) - 48;
+        sqlBuffer[threadIndex].delete(0, sqlBuffer[threadIndex].length());
+        sqlBuffer[threadIndex].append("create table ")
+                .append(database).append(".").append(tableName)
+                .append(" using ").append(database).append(".mt_").append(subCmd)
                 .append(" tags (")
                 .append("'")
                 .append(tableName)
                 .append("')");
-        int val = taosUtils.get(Integer.parseInt(Thread.currentThread().getName())).executeUpdateWithReconnect(sql.toString());
-        sql = null;
+        int val = taosUtils.get(threadIndex).executeUpdateWithReconnect(sqlBuffer[threadIndex].toString());
         return val;
 
     }
@@ -128,9 +124,11 @@ public class DataDaoImpl implements DataDao {
      */
     @Override
     public int createDatabase() throws SQLException {
-        StringBuffer sql = new StringBuffer("create database if not exists " + database);
-        int val = taosUtils.get(0).executeUpdateWithReconnect(sql.toString());
-        sql = null;
+
+        sqlBuffer[0].delete(0,  sqlBuffer[0].length());
+        sqlBuffer[0].append("create database if not exists ")
+                .append(database);
+        int val = taosUtils.get(0).executeUpdateWithReconnect( sqlBuffer[0].toString());
         return val;
 
     }
@@ -145,14 +143,15 @@ public class DataDaoImpl implements DataDao {
      */
     @Override
     public int createMertic(String sqlSuffix, String subCmd) throws SQLException {
-        StringBuffer sql = new StringBuffer("create table  ").append(database);
+        int threadIndex = Thread.currentThread().getName().charAt(0) - 48;
+        sqlBuffer[threadIndex].delete(0,  sqlBuffer[threadIndex].length());
+        sqlBuffer[threadIndex].append("create table  ").append(database)
 
-        sql.append(".mt_");
-        sql.append(subCmd);
-        sql.append(sqlSuffix);
-        sql.append(" tags(tableName binary(32))");
-        int val = taosUtils.get(Integer.parseInt(Thread.currentThread().getName())).executeUpdateWithReconnect(sql.toString());
-        sql = null;
+        .append(".mt_")
+        .append(subCmd)
+        .append(sqlSuffix)
+        .append(" tags(tableName binary(32))");
+        int val = taosUtils.get(threadIndex).executeUpdateWithReconnect( sqlBuffer[threadIndex].toString());
         return val;
 
     }
